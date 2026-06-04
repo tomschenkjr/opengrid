@@ -1,0 +1,323 @@
+datasets:
+  - id: "crimes"
+    displayName: "Crimes"
+    socrata_domain: "data.cityofchicago.org"
+    socrata_dataset_id: "ijzp-q8t2"
+    lat_field: "latitude"
+    lon_field: "longitude"
+    geographic_columns:
+      community_area: "community_area"
+      ward: "ward"
+      zip: null
+      police_district: "district"
+    proximity:
+      name_field: "primary_type"
+      limit: 2000
+      aliases:
+        - "crimes"
+        - "crime locations"
+        - "crime incidents"
+        - "crime scenes"
+    quickSearch:
+      enable: true
+      triggerWord: "crime"
+      triggerAlias: "cr"
+      defaultMax: 200
+      defaultSort: '{"date": -1}'
+    options:
+      rendition:
+        icon: "default"
+        color: "#CC0000"
+        fillColor: "#FF6666"
+        opacity: 85
+        size: 6
+    columns:
+      - id: "date"
+        displayName: "Date"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 1
+        format: "MM/DD/YYYY hh:mm:ss aa"
+      - id: "primary_type"
+        displayName: "Crime Type"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 2
+        quickSearch: true
+      - id: "description"
+        displayName: "Description"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 3
+      - id: "block"
+        displayName: "Block"
+        dataType: "string"
+        popup: true
+        list: true
+        sortOrder: 4
+      - id: "location_description"
+        displayName: "Location"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 5
+      - id: "arrest"
+        displayName: "Arrest"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 6
+
+  - id: "food-inspections"
+    displayName: "Food Inspections"
+    socrata_domain: "data.cityofchicago.org"
+    socrata_dataset_id: "4ijn-s7e5"
+    lat_field: "latitude"
+    lon_field: "longitude"
+    geographic_columns:
+      community_area: null
+      ward: null
+      zip: "zip"
+      police_district: null
+    proximity:
+      name_field: "dba_name"
+      limit: 2000
+      aliases:
+        - "food inspections"
+        - "food establishments"
+        - "inspected restaurants"
+        - "failed food inspections"
+        - "failed inspections"
+    quickSearch:
+      enable: true
+      triggerWord: "food"
+      triggerAlias: "fi"
+      defaultMax: 200
+      defaultSort: '{"inspection_date": -1}'
+    options:
+      rendition:
+        icon: "default"
+        color: "#FF6600"
+        fillColor: "#FFAA66"
+        opacity: 85
+        size: 6
+    columns:
+      - id: "inspection_date"
+        displayName: "Inspection Date"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 1
+        format: "MM/DD/YYYY"
+      - id: "dba_name"
+        displayName: "Business Name"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 2
+        quickSearch: true
+      - id: "results"
+        displayName: "Result"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 3
+      - id: "risk"
+        displayName: "Risk"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 4
+      - id: "address"
+        displayName: "Address"
+        dataType: "string"
+        popup: true
+        list: true
+        sortOrder: 5
+      - id: "violations"
+        displayName: "Violations"
+        dataType: "string"
+        popup: true
+        list: false
+        sortOrder: 6
+
+  - id: "building-permits"
+    displayName: "Building Permits"
+    socrata_domain: "data.cityofchicago.org"
+    socrata_dataset_id: "ydr8-5enu"
+    lat_field: "latitude"
+    lon_field: "longitude"
+    geographic_columns:
+      community_area: "community_area"
+      ward: "ward"
+      zip: null
+      police_district: null
+    proximity:
+      name_field: "permit_type"
+      limit: 1000
+      aliases:
+        - "building permits"
+        - "construction sites"
+        - "permit locations"
+    quickSearch:
+      enable: true
+      triggerWord: "permit"
+      triggerAlias: "bp"
+      defaultMax: 200
+      defaultSort: '{"issue_date": -1}'
+    options:
+      rendition:
+        icon: "default"
+        color: "#006699"
+        fillColor: "#66AACC"
+        opacity: 85
+        size: 6
+    columns:
+      - id: "issue_date"
+        displayName: "Issue Date"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 1
+        format: "MM/DD/YYYY"
+      - id: "permit_type"
+        displayName: "Permit Type"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 2
+        quickSearch: true
+      - id: "work_description"
+        displayName: "Work Description"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 3
+      - id: "street_number"
+        displayName: "Street Number"
+        dataType: "number"
+        popup: true
+        list: true
+        sortOrder: 4
+      - id: "street_direction"
+        displayName: "Direction"
+        dataType: "string"
+        popup: true
+        list: true
+        sortOrder: 5
+      - id: "street_name"
+        displayName: "Street Name"
+        dataType: "string"
+        popup: true
+        list: true
+        sortOrder: 6
+      - id: "total_fee"
+        displayName: "Total Fee"
+        dataType: "float"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 7
+
+  - id: "311-graffiti"
+    displayName: "311 Graffiti Removal"
+    socrata_domain: "data.cityofchicago.org"
+    socrata_dataset_id: "hec5-y4x5"
+    lat_field: "latitude"
+    lon_field: "longitude"
+    geographic_columns:
+      community_area: "community_area"
+      ward: "ward"
+      zip: "zip_code"
+      police_district: "police_district"
+    proximity:
+      name_field: "street_address"
+      limit: 1000
+      aliases:
+        - "graffiti"
+        - "graffiti locations"
+        - "graffiti reports"
+        - "graffiti removal requests"
+    quickSearch:
+      enable: true
+      triggerWord: "graffiti"
+      triggerAlias: "gr"
+      defaultMax: 200
+      defaultSort: '{"creation_date": -1}'
+    options:
+      rendition:
+        icon: "default"
+        color: "#660099"
+        fillColor: "#AA66CC"
+        opacity: 85
+        size: 6
+    columns:
+      - id: "creation_date"
+        displayName: "Date Reported"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 1
+        format: "MM/DD/YYYY"
+      - id: "status"
+        displayName: "Status"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 2
+      - id: "what_type_of_surface_is_the_graffiti_on_"
+        displayName: "Surface Type"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 3
+      - id: "street_address"
+        displayName: "Address"
+        dataType: "string"
+        popup: true
+        list: true
+        sortOrder: 4
+      - id: "zip_code"
+        displayName: "ZIP Code"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 5
+
+  # Proximity-only datasets: used as spatial anchors in "near X" queries but
+  # not exposed as primary queryable layers in the UI.
+  - id: "schools"
+    displayName: "CPS Schools"
+    proximity_only: true
+    socrata_domain: "data.cityofchicago.org"
+    socrata_dataset_id: "kh4r-387c"
+    lat_field: "school_latitude"
+    lon_field: "school_longitude"
+    proximity:
+      name_field: "long_name"
+      limit: 700
+      aliases:
+        - "schools"
+        - "school"
+        - "CPS schools"
+        - "Chicago schools"
+        - "public schools"

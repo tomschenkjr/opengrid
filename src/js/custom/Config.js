@@ -73,10 +73,12 @@ ogrid.Config = {
             name: 'Streets',
            // url:'https://server.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer',
             //flag to indicate whether Esri's tiledMapLayer plug-in class will be used
-           url:'https://{s}.tiles.mapbox.com/v4/mapbox.streets/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFub2puZWxha3VydGhpIiwiYSI6ImNpcTJmcW96MDAxNDJmdG00MDV4dms1M2QifQ.Gac-ef2dr0xsmgkMbgD9zw',
+           url:'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=YOUR_MAPBOX_TOKEN',
 			useEsri: false,
             options: {
-                attribution: 'Imagery from <a href="http://mapbox.com/about/maps/">MapBox</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                attribution: 'Imagery from <a href="http://mapbox.com/about/maps/">MapBox</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                tileSize: 512,
+                zoomOffset: -1
             }}
         , 
 		{
@@ -185,9 +187,8 @@ ogrid.Config = {
         mock: false,
         plugins: [
             ogrid.QSearchProcessor.latLng(),
-            ogrid.QSearchProcessor.flexData() //this replaces the Tweet and Weather Quick Search processors
-
-            //Place/Address search is built-in
+            ogrid.QSearchProcessor.flexData(),
+            ogrid.QSearchProcessor.aiSearch() //routes to smart search: POI geocoding or AI data query
         ],
         helpFile: 'templates/qsearch-help.html',
         plugInOptions: {

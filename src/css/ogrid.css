@@ -18,6 +18,54 @@ html, body {
   min-width: 130px;
 }
 
+/* Allow focused form to overflow below the navbar into the map */
+.navbar, .navbar-header, .navbar .container-fluid {
+  overflow: visible;
+}
+
+/* Anchor point for the absolute-positioned focus overlay */
+.navbar .container-fluid {
+  position: relative;
+}
+
+/* On focus — tablet and up: the form breaks out of #ogrid-search and
+   spans the full navbar container, dropping below into the map */
+@media (min-width: 768px) {
+  #ogrid-search:focus-within .navbar-form {
+    position: absolute;
+    top: 5px;
+    left: 15px;
+    right: auto;
+    width: 80%;
+    z-index: 9999;
+    padding: 8px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 10px 36px rgba(0, 0, 0, 0.2);
+  }
+
+  #ogrid-search:focus-within .form-control {
+    height: 60px;
+    font-size: 18px;
+    border-color: transparent;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  #ogrid-search:focus-within .input-group-addon {
+    height: 60px;
+    line-height: 60px;
+    border-color: transparent;
+    background: transparent;
+  }
+
+  #ogrid-search:focus-within #ogrid-qsearch-hint {
+    top: 0;
+    height: 60px;
+    line-height: 60px;
+  }
+}
+
 
 #ogrid-search.pull-left.col-xs-7 {
   padding: 0px;
@@ -29,6 +77,20 @@ html, body {
   #ogrid-search {
     width: 280px;
     margin-left: 0px;
+  }
+}
+
+/* tablet */
+@media (min-width: 768px) {
+  #ogrid-search {
+    width: 600px;
+  }
+}
+
+/* desktop */
+@media (min-width: 992px) {
+  #ogrid-search {
+    width: 800px;
   }
 }
 
@@ -67,6 +129,27 @@ and consequently our other UX elements */
   left: 0;
   bottom: 22px;
   right: 0;
+}
+
+#ogrid-search-again {
+  display: none;
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  padding: 8px 20px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+#ogrid-search-again:hover {
+  background: #f5f5f5;
 }
 
 #map {
@@ -286,6 +369,13 @@ h6 > a {
   border: 0;
   -webkit-box-shadow: none;
   box-shadow: none;
+  display: block;
+  width: 100%;
+}
+
+#qsearch {
+  display: table;
+  width: 100%;
 }
 
 #ogrid-footer td, th {

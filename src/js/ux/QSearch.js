@@ -15,6 +15,7 @@ ogrid.QSearch = ogrid.Class.extend({
     _input: null,
     _qsbutton: null,
     _geoFilter: null,
+    _mapMoveHandler: null,
 
     //public attributes
 
@@ -47,6 +48,12 @@ ogrid.QSearch = ogrid.Class.extend({
         //subscribe to applicable opengrid client events
         ogrid.Event.on(ogrid.Event.types.CLEAR, $.proxy(this._onClear, this));
         ogrid.Event.on(ogrid.Event.types.LOGGED_IN, $.proxy(this._onLoggedIn, this));
+
+        var me = this;
+        $('#ogrid-search-again').on('click', function() {
+            $(this).hide();
+            me._onSearch();
+        });
 
     },
 
@@ -105,9 +112,6 @@ ogrid.QSearch = ogrid.Class.extend({
                 //dsCall.then(function (dataTypes) {
                     o.setOptions({datasets: this._options.datasets});
                     me._input.prop('disabled', false);
-
-                    //avoid annoying keyboard popup when on mobile mode
-                    if (!ogrid.App.mobileView()) me._input.focus();
                 //});
             }
         } catch (ex) {
@@ -117,6 +121,7 @@ ogrid.QSearch = ogrid.Class.extend({
 
     _onClear: function (evtData) {
         this._input.val('');
+        $('#ogrid-search-again').hide();
         try {
             //avoid annoying keyboard popup when on mobile mode
             if (!ogrid.App.mobileView()) this._input.focus();
@@ -192,19 +197,82 @@ ogrid.QSearch = ogrid.Class.extend({
             results.meta.view.options.rendition.fillColor =  (chroma.scale(['white', c])(0.5)).hex();
         }
 
-        //we're no longer sending clear flag after a quick search is executed
-        //"no clear" disabled temporarily as of 08/19
+        var prox = results.meta && results.meta.proximity;
+        if (prox) {
+            ogrid.Alert.info('Showing results ' + prox.label + '.');
+        }
 
         ogrid.Event.raise(ogrid.Event.types.REFRESH_DATA, {
             resultSetId:ogrid.guid(),
             data: results,
             options: {
                 clear: true,
-
-                //added support for refresh on map extent change
-                passthroughData: {regenerator: {handler:this} }
+                passthroughData: {}  // no regenerator — map extent changes use the button instead
             }
-        } );
+        });
+
+        // Overlay reference anchor locations without clearing the primary layer
+        if (prox && prox.layer) {
+            ogrid.Event.raise(ogrid.Event.types.REFRESH_DATA, {
+                resultSetId: ogrid.guid(),
+                data: prox.layer,
+                options: { clear: false, passthroughData: {} }
+            });
+        }
+
+        // For proximity searches, auto-fit the map to all result + anchor features
+        var me = this;
+        var didFitBounds = false;
+        if (prox && results.features && results.features.length > 0) {
+            var lats = [], lons = [];
+            var collectCoords = function(fc) {
+                if (!fc || !fc.features) return;
+                $.each(fc.features, function(i, f) {
+                    if (f.geometry && f.geometry.coordinates) {
+                        lons.push(f.geometry.coordinates[0]);
+                        lats.push(f.geometry.coordinates[1]);
+                    }
+                });
+            };
+            collectCoords(results);
+            if (prox.layer) { collectCoords(prox.layer); }
+            if (lats.length > 0) {
+                try {
+                    var sw = [Math.min.apply(null, lats), Math.min.apply(null, lons)];
+                    var ne = [Math.max.apply(null, lats), Math.max.apply(null, lons)];
+                    ogrid.App.map().getMap().fitBounds([sw, ne], { padding: [40, 40] });
+                    didFitBounds = true;
+                } catch(e) {}
+            }
+        }
+
+        // Defer the "Search this area" watcher until after any auto-zoom animation
+        if (didFitBounds) {
+            try {
+                ogrid.App.map().getMap().once('moveend', function() {
+                    me._watchMapForSearchAgain();
+                });
+            } catch(e) {
+                me._watchMapForSearchAgain();
+            }
+        } else {
+            me._watchMapForSearchAgain();
+        }
+    },
+
+    _watchMapForSearchAgain: function() {
+        var me = this;
+        try {
+            var map = ogrid.App.map().getMap();
+            if (me._mapMoveHandler) {
+                map.off('moveend', me._mapMoveHandler);
+            }
+            $('#ogrid-search-again').hide();
+            me._mapMoveHandler = function() {
+                $('#ogrid-search-again').show();
+            };
+            map.on('moveend', me._mapMoveHandler);
+        } catch(e) {}
     },
 
     _onExecError: function (err, rawErrorData, passThroughData) {

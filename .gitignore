@@ -2,3 +2,7 @@ dist
 node_modules
 .idea
 debug
+opengrid-service/.venv
+opengrid-service/.env
+opengrid-service/**/__pycache__
+opengrid-service/**/*.pyc

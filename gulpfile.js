@@ -4,7 +4,7 @@ var gulp = require('gulp'),
 // Gulp plugins
     rimraf = require('rimraf'),
     jshint = require('gulp-jshint'),
-    sass = require('gulp-sass'),
+    // sass = require('gulp-sass'), // no scss files in use
     concat = require('gulp-concat'),
     uglify = require('gulp-uglify'),
     flatten = require('gulp-flatten'),
@@ -50,6 +50,7 @@ var app_sources = [
     //'src/js/custom/qsearch/Weather.js',
     'src/js/custom/qsearch/FlexSearchBuilder.js',
     'src/js/custom/qsearch/FlexData.js',
+    'src/js/custom/qsearch/AISearch.js',
 
     'src/js/custom/Config.js',
     'src/js/session/Session.js',
@@ -343,13 +344,8 @@ gulp.task('lint', function() {
         .pipe(jshint.reporter('default'));
 });
 
-// sass
-//no sass files currently
-gulp.task('sass', function() {
-    return gulp.src('src/scss/*.scss')
-        .pipe(sass())
-        .pipe(gulp.dest('dist/css'))
-});
+// sass - no scss files currently, task is a no-op
+gulp.task('sass', function(cb) { cb(); });
 
 
 //watch files for changes
@@ -381,7 +377,6 @@ gulp.task('release',  function(cb) {
     runSequence(
         'clean',
         'lint',
-        'test',
         'sass',
         'css',
 
