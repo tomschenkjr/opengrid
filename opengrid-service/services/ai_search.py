@@ -188,7 +188,11 @@ Multiple datasets — when the query clearly asks to show more than one dataset 
   [{{"dataset_id": "crimes", "soql_where": null}}, {{"dataset_id": "food-inspections", "soql_where": "results = 'Fail'"}}]
   [{{"dataset_id": "crimes", "soql_where": "primary_type = 'ROBBERY'"}}, {{"dataset_id": "building-permits", "soql_where": null}}]
 
-If the query is about a specific place, address, business, or landmark (not data records), respond:
+If the query names only a Chicago neighborhood, community area, or ward with no data intent (e.g. "Logan Square", "the Loop", "Ward 35"), include its geography so the boundary can be shown:
+  {{"dataset_id": null, "geography": {{"type": "community_area", "name": "Logan Square", "number": 22}}}}
+  {{"dataset_id": null, "geography": {{"type": "ward", "number": 35}}}}
+
+If the query is about a specific place, address, business, or landmark (not a Chicago neighborhood), respond:
   {{"dataset_id": null}}"""
 
 
@@ -389,6 +393,66 @@ def _build_reference_layer(locs: list[dict], reference: str) -> dict:
     }
 
 
+def _build_boundary_layer(geo: dict) -> dict | None:
+    """
+    Build a GeoJSON FeatureCollection for a community-area or ward boundary polygon.
+    Returns None if the geometry isn't cached yet.
+    """
+    geo_type = geo.get("type")
+    geom = None
+    display_name = ""
+    boundary_id = ""
+
+    if geo_type == "community_area":
+        number = geo.get("number")
+        name = geo.get("name", "")
+        if not number:
+            return None
+        geom = geography.get_community_area_geojson(number)
+        display_name = name.title() if name else f"Community Area {number}"
+        boundary_id = f"boundary-community-{number}"
+
+    elif geo_type == "ward":
+        number = geo.get("number")
+        if not number:
+            return None
+        geom = geography.get_ward_geojson(number)
+        display_name = f"Ward {number}"
+        boundary_id = f"boundary-ward-{number}"
+
+    if not geom:
+        return None
+
+    return {
+        "type": "FeatureCollection",
+        "features": [{
+            "type": "Feature",
+            "geometry": geom,
+            "properties": {"name": display_name},
+        }],
+        "meta": {
+            "view": {
+                "id": boundary_id,
+                "displayName": display_name,
+                "options": {
+                    "rendition": {
+                        "icon": "boundary",
+                        "color": "#0066CC",
+                        "fillColor": "#0066CC",
+                        "opacity": 90,
+                        "size": 8,
+                        "borderWidth": 3,
+                    }
+                },
+                "columns": [
+                    {"id": "name", "displayName": "Name", "dataType": "string",
+                     "popup": True, "list": True},
+                ],
+            }
+        },
+    }
+
+
 async def _process_single_result(result: dict, bounds: dict | None, current_location: dict | None = None) -> dict | None:
     """Process one Haiku result dict → GeoJSON FeatureCollection, or None on no match."""
     dataset_id = result.get("dataset_id")
@@ -491,6 +555,14 @@ async def _process_single_result(result: dict, bounds: dict | None, current_loca
     )
     if proximity_meta:
         geojson["meta"]["proximity"] = proximity_meta
+
+    # Attach a boundary polygon layer when the query targeted a specific geography
+    geo = result.get("geography")
+    if geo:
+        boundary = _build_boundary_layer(geo)
+        if boundary:
+            geojson["meta"]["geography_boundary"] = boundary
+
     return geojson
 
 
@@ -513,6 +585,12 @@ async def smart_search(query: str, bounds: dict | None = None, current_location:
     # Single dataset
     dataset_id = result.get("dataset_id")
     if not dataset_id:
+        # Haiku identified a named geography with no data intent — return its boundary
+        geo = result.get("geography")
+        if geo:
+            boundary = _build_boundary_layer(geo)
+            if boundary:
+                return boundary
         return await geocode_poi(query)
 
     layer = await _process_single_result(result, bounds, current_location)

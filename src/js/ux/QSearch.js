@@ -238,6 +238,16 @@ ogrid.QSearch = ogrid.Class.extend({
             });
         }
 
+        // Overlay geography boundary (community area / ward outline) if present
+        var geoBoundary = results.meta && results.meta.geography_boundary;
+        if (geoBoundary) {
+            ogrid.Event.raise(ogrid.Event.types.REFRESH_DATA, {
+                resultSetId: ogrid.guid(),
+                data: geoBoundary,
+                options: { clear: false, passthroughData: {} }
+            });
+        }
+
         // For proximity searches, auto-fit the map to all result + anchor features
         var me = this;
         var didFitBounds = false;
@@ -262,6 +272,16 @@ ogrid.QSearch = ogrid.Class.extend({
                     didFitBounds = true;
                 } catch(e) {}
             }
+        }
+
+        // For pure-boundary responses (community area / ward lookup with no data),
+        // fit the map to the polygon's own extent using Leaflet's geoJSON helper.
+        if (!didFitBounds && geoBoundary && results.features && results.features.length === 0) {
+            try {
+                var bLayer = L.geoJSON(geoBoundary);
+                ogrid.App.map().getMap().fitBounds(bLayer.getBounds(), { padding: [40, 40] });
+                didFitBounds = true;
+            } catch(e) {}
         }
 
         // Defer the "Search this area" watcher until after any auto-zoom animation

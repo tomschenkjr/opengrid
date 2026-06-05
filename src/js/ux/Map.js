@@ -445,8 +445,16 @@ ogrid.Map = ogrid.Class.extend({
                 var latestDataTs = me._getLatestDataTs(data);
                 var resultsLayer = L.geoJson(data, {
                     style: function (feature) {
-                        //can't use feature.properties.marker-color due to the dash on the name
-                        //return {color: feature.properties['marker-color']};
+                        var t = feature.geometry && feature.geometry.type;
+                        if (t && t !== 'Point' && t !== 'MultiPoint') {
+                            var o = data.meta.view.options.rendition;
+                            return {
+                                color:       o.color || '#0066CC',
+                                weight:      o.borderWidth || 3,
+                                opacity:     ((o.opacity || 90) / 100),
+                                fill:        false
+                            };
+                        }
                     },
 
                     pointToLayer: function(feature, latlng) {

@@ -111,9 +111,13 @@ NEIGHBORHOOD_ALIASES: dict[str, str] = {
     "ASHBURN": "ASHBURN",
 }
 
-# Boundary polygon cache: area number → WKT string
+# Boundary polygon cache: area number → WKT string (for Socrata SOQL)
 _community_polygons: dict[int, str] = {}
 _ward_polygons: dict[int, str] = {}
+
+# Raw GeoJSON geometry cache: area number → GeoJSON geometry dict (for client display)
+_community_geojson: dict[int, dict] = {}
+_ward_geojson: dict[int, dict] = {}
 
 
 def resolve_community_area(name: str) -> tuple[int | None, str | None]:
@@ -138,6 +142,16 @@ def get_community_area_polygon(number: int) -> str | None:
 def get_ward_polygon(ward: int) -> str | None:
     """Return WKT polygon for a ward boundary, or None if not cached."""
     return _ward_polygons.get(ward)
+
+
+def get_community_area_geojson(number: int) -> dict | None:
+    """Return raw GeoJSON geometry for a community area, for client-side boundary display."""
+    return _community_geojson.get(number)
+
+
+def get_ward_geojson(ward: int) -> dict | None:
+    """Return raw GeoJSON geometry for a ward, for client-side boundary display."""
+    return _ward_geojson.get(ward)
 
 
 def _bbox_from_wkt(wkt: str) -> dict | None:
@@ -212,7 +226,7 @@ def _geojson_multipolygon_to_wkt(geom: dict) -> str | None:
 
 async def _fetch_community_area_polygons():
     """Fetch community area boundary polygons from Socrata."""
-    global _community_polygons
+    global _community_polygons, _community_geojson
     app_token = os.getenv("SOCRATA_APP_TOKEN", "").strip() or None
     headers = {"User-Agent": "opengrid-service/1.0"}
     if app_token:
@@ -239,6 +253,7 @@ async def _fetch_community_area_polygons():
                 wkt = _geojson_multipolygon_to_wkt(geom_raw)
                 if wkt:
                     _community_polygons[number] = wkt
+                    _community_geojson[number] = geom_raw
             except (ValueError, json.JSONDecodeError, TypeError):
                 continue
 
@@ -249,7 +264,7 @@ async def _fetch_community_area_polygons():
 
 async def _fetch_ward_polygons():
     """Fetch ward boundary polygons from Socrata."""
-    global _ward_polygons
+    global _ward_polygons, _ward_geojson
     app_token = os.getenv("SOCRATA_APP_TOKEN", "").strip() or None
     headers = {"User-Agent": "opengrid-service/1.0"}
     if app_token:
@@ -277,6 +292,7 @@ async def _fetch_ward_polygons():
                 wkt = _geojson_multipolygon_to_wkt(geom_raw)
                 if wkt:
                     _ward_polygons[ward] = wkt
+                    _ward_geojson[ward] = geom_raw
             except (ValueError, json.JSONDecodeError, TypeError):
                 continue
 
