@@ -505,9 +505,17 @@ ogrid.Map = ogrid.Class.extend({
                     },
 
                     onEachFeature: function (feature, layer) {
+                        var popLatLng;
+                        var gtype = feature.geometry && feature.geometry.type;
+                        if (gtype === 'Point') {
+                            popLatLng = [feature.geometry.coordinates[1], feature.geometry.coordinates[0]];
+                        } else {
+                            // For Polygon / MultiPolygon use the layer's own center
+                            try { popLatLng = layer.getBounds().getCenter(); } catch(e) {}
+                        }
                         var pop = L.popup()
-                            .setLatLng([feature.geometry.coordinates[1],  feature.geometry.coordinates[0]])
                             .setContent(me._popupText(feature, data.meta.view));
+                        if (popLatLng) pop.setLatLng(popLatLng);
 
                         layer.bindPopup(pop);
                         if (!ogrid.isNull(feature.autoPopup) && feature.autoPopup) {
