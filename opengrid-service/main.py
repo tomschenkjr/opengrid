@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-from routers import auth, datasets, queries, capabilities, search
+from routers import auth, datasets, queries, capabilities, search, summarize
 from services.ai_search import initialize as ai_initialize
 from services import geography
 
@@ -44,6 +44,7 @@ app.include_router(datasets.router, prefix=PREFIX)
 app.include_router(queries.router, prefix=PREFIX)
 app.include_router(capabilities.router, prefix=PREFIX)
 app.include_router(search.router, prefix=PREFIX)
+app.include_router(summarize.router, prefix=PREFIX)
 
 
 @app.get("/health")

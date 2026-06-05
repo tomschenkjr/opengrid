@@ -16,6 +16,8 @@ ogrid.QSearch = ogrid.Class.extend({
     _qsbutton: null,
     _geoFilter: null,
     _mapMoveHandler: null,
+    _lastResults: null,
+    _lastQuery: '',
 
     //public attributes
 
@@ -53,6 +55,11 @@ ogrid.QSearch = ogrid.Class.extend({
         $('#ogrid-search-again').on('click', function() {
             $(this).hide();
             me._onSearch();
+        });
+
+        $('#ogrid-summarize-btn').on('click', $.proxy(this._onSummarize, this));
+        $('#ogrid-summary-close').on('click', function() {
+            $('#ogrid-summary-panel').addClass('hide');
         });
 
     },
@@ -121,7 +128,11 @@ ogrid.QSearch = ogrid.Class.extend({
 
     _onClear: function (evtData) {
         this._input.val('');
+        this._lastResults = null;
+        this._lastQuery = '';
         $('#ogrid-search-again').hide();
+        $('#ogrid-summarize-wrapper').addClass('hide');
+        $('#ogrid-summary-panel').addClass('hide');
         try {
             //avoid annoying keyboard popup when on mobile mode
             if (!ogrid.App.mobileView()) this._input.focus();
@@ -236,6 +247,10 @@ ogrid.QSearch = ogrid.Class.extend({
                 }
             } catch(e) {}
 
+            me._lastResults = results;
+            me._lastQuery = me._input.val();
+            $('#ogrid-summarize-wrapper').removeClass('hide');
+            $('#ogrid-summary-panel').addClass('hide');
             me._watchMapForSearchAgain();
             return;
         }
@@ -330,6 +345,12 @@ ogrid.QSearch = ogrid.Class.extend({
             } catch(e) {}
         }
 
+        // Store results and reveal the Summarize button
+        this._lastResults = results;
+        this._lastQuery = this._input.val();
+        $('#ogrid-summarize-wrapper').removeClass('hide');
+        $('#ogrid-summary-panel').addClass('hide');
+
         // Defer the "Search this area" watcher until after any auto-zoom animation
         if (didFitBounds) {
             try {
@@ -342,6 +363,63 @@ ogrid.QSearch = ogrid.Class.extend({
         } else {
             me._watchMapForSearchAgain();
         }
+    },
+
+    _onSummarize: function() {
+        if (!this._lastResults) return;
+
+        var me = this;
+        var results = me._lastResults;
+
+        // Collect features and dataset name from single or multi-dataset response
+        var features = [];
+        var datasetNames = [];
+        if (results.layers && results.layers.length > 0) {
+            $.each(results.layers, function(i, layer) {
+                if (layer.features) { features = features.concat(layer.features); }
+                var dn = layer.meta && layer.meta.view && layer.meta.view.displayName;
+                if (dn) datasetNames.push(dn);
+            });
+        } else if (results.features) {
+            features = results.features;
+            var dn = results.meta && results.meta.view && results.meta.view.displayName;
+            if (dn) datasetNames.push(dn);
+        }
+
+        var sample = features.slice(0, 50).map(function(f) { return f.properties || {}; });
+        var payload = {
+            query: me._lastQuery,
+            dataset_name: datasetNames.join(' + ') || 'Chicago open data',
+            total_count: features.length,
+            sample_records: sample
+        };
+
+        var endpoint = ogrid.Config.service.endpoint;
+        var url = endpoint.replace(/\/rest\/?$/, '') + '/rest/search/summarize';
+
+        $('#ogrid-summary-text').html('<span class="ogrid-summary-loading">Generating summary…</span>');
+        $('#ogrid-summary-panel').removeClass('hide');
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(payload),
+            timeout: 30000,
+            success: function(data) {
+                var text = (data.summary || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                if (data.highlights && data.highlights.length) {
+                    $.each(data.highlights, function(i, phrase) {
+                        var safe = phrase.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                        text = text.replace(safe, '<mark>' + safe + '</mark>');
+                    });
+                }
+                $('#ogrid-summary-text').html(text);
+            },
+            error: function() {
+                $('#ogrid-summary-text').html('Unable to generate summary. Please try again.');
+            }
+        });
     },
 
     _watchMapForSearchAgain: function() {
