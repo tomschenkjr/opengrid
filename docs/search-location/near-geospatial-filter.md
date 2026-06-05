@@ -1,5 +1,8 @@
 # Searching Near a Location
-You can search around a particular location, such as an address or your current location. Set the radius around the point and find any data within that circle. To search around a particular location, click on "Select Location" within the "Find Data" panel.
+
+> **Tip — faster with natural language:** The search bar supports proximity queries directly. Type phrases like `crimes near me`, `rodent complaints near schools`, or `food inspections within half a mile of the United Center` and the AI handles the spatial filtering automatically. See [Smart Search — Proximity Queries](../quick-search/quick-search.md#4-proximity-query) for the full list of supported expressions.
+
+The **Find Data** panel also provides a manual proximity filter for precise radius control. To use it, click on "Select Location" within the "Find Data" panel.
 
 ## Search Around Me (current location)
  1. Select "Me" from the drop-down menu. For privacy reasons, the user is asked permission to access location information.
