@@ -131,13 +131,24 @@ and consequently our other UX elements */
   right: 0;
 }
 
+/* Flex column that stacks the summary panel above "Search this area".
+   pointer-events:none lets map interactions fall through the empty gaps. */
+#ogrid-map-overlays {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
 #ogrid-search-again {
   display: none;
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2000;
+  pointer-events: auto;
   padding: 8px 20px;
   background: #fff;
   border: 1px solid #ccc;
@@ -420,16 +431,13 @@ h6 > a {
   padding: 8px 0 0 8px;
 }
 
-/* Summary panel — absolute overlay at the top of the map area */
+/* Summary panel — flex child of #ogrid-map-overlays, centered with 20% side margins */
 #ogrid-summary-panel {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  right: 10px;
-  z-index: 500;
+  width: 60%;
+  pointer-events: auto;
   background: #fff;
   border: 2px solid #2e76c4;
-  border-radius: 6px;
+  border-radius: 12px;
   padding: 12px 36px 12px 16px;
   box-shadow: 0 4px 18px rgba(0,0,0,0.18);
 }
