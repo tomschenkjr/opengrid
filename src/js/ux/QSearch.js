@@ -184,6 +184,9 @@ ogrid.QSearch = ogrid.Class.extend({
         // Multi-dataset response: render each layer independently
         if (results.layers && results.layers.length > 0) {
             var me = this;
+            var sharedBoundary = null;
+            var multiLats = [], multiLons = [];
+
             $.each(results.layers, function(i, layer) {
                 if (me._isGeoFilterableData(layer)) {
                     var c = layer.meta.view.options.rendition.color;
@@ -194,7 +197,43 @@ ogrid.QSearch = ogrid.Class.extend({
                     data: layer,
                     options: { clear: i === 0, passthroughData: {} }
                 });
+                // Collect the boundary from the first layer that has one (all share the same geography)
+                if (!sharedBoundary && layer.meta && layer.meta.geography_boundary) {
+                    sharedBoundary = layer.meta.geography_boundary;
+                }
+                // Accumulate point coordinates for auto-fit
+                if (layer.features) {
+                    $.each(layer.features, function(j, f) {
+                        if (f.geometry && f.geometry.type === 'Point' && f.geometry.coordinates) {
+                            multiLons.push(f.geometry.coordinates[0]);
+                            multiLats.push(f.geometry.coordinates[1]);
+                        }
+                    });
+                }
             });
+
+            // Render the shared boundary once on top of all data layers
+            if (sharedBoundary) {
+                ogrid.Event.raise(ogrid.Event.types.REFRESH_DATA, {
+                    resultSetId: ogrid.guid(),
+                    data: sharedBoundary,
+                    options: { clear: false, passthroughData: {} }
+                });
+            }
+
+            // Auto-fit to combined data extent, falling back to boundary if no points
+            try {
+                if (multiLats.length > 0) {
+                    var sw = [Math.min.apply(null, multiLats), Math.min.apply(null, multiLons)];
+                    var ne = [Math.max.apply(null, multiLats), Math.max.apply(null, multiLons)];
+                    ogrid.App.map().getMap().fitBounds([sw, ne], { padding: [40, 40] });
+                } else if (sharedBoundary) {
+                    ogrid.App.map().getMap().fitBounds(
+                        L.geoJSON(sharedBoundary).getBounds(), { padding: [40, 40] }
+                    );
+                }
+            } catch(e) {}
+
             me._watchMapForSearchAgain();
             return;
         }
