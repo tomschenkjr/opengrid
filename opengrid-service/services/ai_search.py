@@ -31,7 +31,7 @@ _crime_types: list[str] = []
 # Stable enum values hardcoded — these don't change in the source data
 _FOOD_RESULTS = "Pass | Pass w/ Conditions | Fail | No Entry | Out of Business"
 _FOOD_RISK = "Risk 1 (High) | Risk 2 (Medium) | Risk 3 (Low)"
-_GRAFFITI_STATUS = "Open | Completed | Completed - Dup"
+_311_STATUS = "Open | Closed | Open - Dup | Closed - Dup"
 
 
 def _load_datasets() -> list[dict]:
@@ -109,8 +109,8 @@ def _build_system_prompt() -> str:
                 line += f"\n    Values: {_FOOD_RESULTS}"
             elif ds["id"] == "food-inspections" and col["id"] == "risk":
                 line += f"\n    Values: {_FOOD_RISK}"
-            elif ds["id"] == "311-graffiti" and col["id"] == "status":
-                line += f"\n    Values: {_GRAFFITI_STATUS}"
+            elif ds["id"] == "311-service-requests" and col["id"] == "status":
+                line += f"\n    Values: {_311_STATUS}"
             col_lines.append(line)
 
         blocks.append(
@@ -181,7 +181,7 @@ Single dataset:
   {{"dataset_id": "crimes", "soql_where": "primary_type = 'ROBBERY' AND date >= '2026-05-01T00:00:00'", "order_by": "date DESC"}}
   {{"dataset_id": "crimes", "soql_where": "date >= '2026-05-01T00:00:00'", "geography": {{"type": "community_area", "name": "Logan Square", "number": 22}}}}
   {{"dataset_id": "crimes", "soql_where": "primary_type = 'ROBBERY'", "proximity": {{"reference": "schools", "distance_meters": 305}}}}
-  {{"dataset_id": "311-graffiti", "soql_where": null, "geography": {{"type": "ward", "number": 35}}, "proximity": {{"reference": "Starbucks", "distance_meters": 200}}}}
+  {{"dataset_id": "311-service-requests", "soql_where": "sr_type LIKE '%Graffiti%'", "geography": {{"type": "ward", "number": 35}}}}
   {{"dataset_id": "crimes", "soql_where": null, "proximity": {{"reference": "current location", "distance_meters": 400}}}}
 
 Multiple datasets — when the query clearly asks to show more than one dataset at once, respond with a JSON array (max 2 items):

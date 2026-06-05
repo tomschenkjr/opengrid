@@ -234,10 +234,10 @@ datasets:
         list: true
         sortOrder: 7
 
-  - id: "311-graffiti"
-    displayName: "311 Graffiti Removal"
+  - id: "311-service-requests"
+    displayName: "311 Service Requests"
     socrata_domain: "data.cityofchicago.org"
-    socrata_dataset_id: "hec5-y4x5"
+    socrata_dataset_id: "v6vf-nfxy"
     lat_field: "latitude"
     lon_field: "longitude"
     geographic_columns:
@@ -246,44 +246,51 @@ datasets:
       zip: "zip_code"
       police_district: "police_district"
     proximity:
-      name_field: "street_address"
+      name_field: "sr_type"
       limit: 1000
       aliases:
+        - "311 requests"
+        - "311 service requests"
+        - "service requests"
         - "graffiti"
-        - "graffiti locations"
-        - "graffiti reports"
-        - "graffiti removal requests"
+        - "graffiti removal"
+        - "pot holes"
+        - "potholes"
+        - "abandoned vehicles"
+        - "rodent complaints"
+        - "tree trims"
     quickSearch:
       enable: true
-      triggerWord: "graffiti"
-      triggerAlias: "gr"
+      triggerWord: "311"
+      triggerAlias: "311"
       defaultMax: 200
-      defaultSort: '{"creation_date": -1}'
+      defaultSort: '{"created_date": -1}'
     options:
       rendition:
         icon: "default"
-        color: "#660099"
-        fillColor: "#AA66CC"
+        color: "#007A5E"
+        fillColor: "#4DAF94"
         opacity: 85
         size: 6
     columns:
-      - id: "creation_date"
-        displayName: "Date Reported"
+      - id: "created_date"
+        displayName: "Date Created"
         dataType: "date"
         filter: true
         popup: true
         list: true
         sortOrder: 1
         format: "MM/DD/YYYY"
-      - id: "status"
-        displayName: "Status"
+      - id: "sr_type"
+        displayName: "Request Type"
         dataType: "string"
         filter: true
         popup: true
         list: true
         sortOrder: 2
-      - id: "what_type_of_surface_is_the_graffiti_on_"
-        displayName: "Surface Type"
+        quickSearch: true
+      - id: "status"
+        displayName: "Status"
         dataType: "string"
         filter: true
         popup: true
@@ -297,11 +304,18 @@ datasets:
         sortOrder: 4
       - id: "zip_code"
         displayName: "ZIP Code"
-        dataType: "number"
+        dataType: "string"
         filter: true
         popup: true
         list: true
         sortOrder: 5
+      - id: "ward"
+        displayName: "Ward"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 6
 
   # Proximity-only datasets: used as spatial anchors in "near X" queries but
   # not exposed as primary queryable layers in the UI.
