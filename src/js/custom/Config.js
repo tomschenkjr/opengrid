@@ -71,14 +71,11 @@ ogrid.Config = {
         //first base layer becomes base layer selected by default
        baseLayers:[{
             name: 'Streets',
-           // url:'https://server.arcgisonline.com/arcgis/rest/services/World_Street_Map/MapServer',
-            //flag to indicate whether Esri's tiledMapLayer plug-in class will be used
-           url:'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=YOUR_MAPBOX_TOKEN',
+            url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
 			useEsri: false,
             options: {
-                attribution: 'Imagery from <a href="http://mapbox.com/about/maps/">MapBox</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-                tileSize: 512,
-                zoomOffset: -1
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
             }}
         , 
 		{
