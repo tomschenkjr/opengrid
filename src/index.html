@@ -66,7 +66,8 @@
             <div id="ogrid-search" class="pull-left">
                 <form class="navbar-form " role="search">
                     <div class="form-group has-feedback input-group" id="qsearch">
-                        <input autocapitalize="off" type="text" class="form-control" id="qsearch-input" placeholder="Find Places, Businesses, etc." />
+                        <input autocapitalize="off" type="text" class="form-control" id="qsearch-input" placeholder="" />
+                        <span id="qsearch-placeholder" aria-hidden="true"></span>
                         <span id="ogrid-qsearch-hint" class="glyphicon glyphicon-question-sign" data-toggle="popover" tabindex="0" data-placement="bottom" title="Quick Search Help"></span>
                         <span class="input-group-addon" id="qsearch-button">
                             <i class="fa fa-search"></i>
@@ -363,6 +364,40 @@
       ogrid.App = app;
       app.run();
     });
+
+    // Rotating search placeholder
+    (function() {
+      var msgs = [
+        "Show me burglaries on St. Patrick's Day.",
+        'Has there been graffiti in West Loop?',
+        'Have there been failed food inspections in the Loop?',
+        'What are recent crimes around 333 S State St?',
+        'Show me crimes and restaurant inspections around me.',
+        'New building permits around me.',
+        'Starbucks',
+        'Rat complaints near restaurants',
+        'How many building violations were submitted online?'
+      ];
+      var idx = 0;
+      $(document).ready(function() {
+        var $el = $('#qsearch-placeholder');
+        var $input = $('#qsearch-input');
+        $el.text(msgs[0]);
+        $input
+          .on('focus', function() { $el.css('opacity', 0); })
+          .on('blur',  function() { if (!$input.val()) $el.css('opacity', 1); })
+          .on('input', function() { $el.css('opacity', this.value ? 0 : 1); });
+        setInterval(function() {
+          if ($input.is(':focus') || $input.val()) return;
+          $el.css('opacity', 0);
+          setTimeout(function() {
+            idx = (idx + 1) % msgs.length;
+            $el.text(msgs[idx]);
+            $el.css('opacity', 1);
+          }, 500);
+        }, 5000);
+      });
+    })();
   </script>
 </body>
 </html>

@@ -6,6 +6,9 @@
  * natural language data queries (via Claude + chicago-data-mcp).
  */
 
+// Phrases that signal the user wants results near their current GPS position.
+var _GEO_SELF_RE = /\b(near(?: me| here)|nearby|close to me|by me|around(?: me| here)?|from here|right here|in (?:my (?:neighborhood|area|vicinity|community|part of town|backyard|block|street)|this area)|at my (?:house|home|address)|where i live|near where i live|(?:my )?current location|my location|locally)\b/i;
+
 ogrid.QSearchProcessor.AISearch = ogrid.QSearchProcessor.extend({
     _options: {
         endpoint: null
@@ -24,10 +27,29 @@ ogrid.QSearchProcessor.AISearch = ogrid.QSearchProcessor.extend({
 
     exec: function(input, onSuccess, onError) {
         var me = this;
+        var trimmed = $.trim(input);
+
+        if (_GEO_SELF_RE.test(trimmed) && navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(pos) {
+                    me._doSearch(trimmed, {lat: pos.coords.latitude, lon: pos.coords.longitude}, onSuccess, onError);
+                },
+                function() {
+                    onError('Location access is required for this search. Please allow location access and try again.');
+                },
+                { timeout: 10000, maximumAge: 60000 }
+            );
+        } else {
+            me._doSearch(trimmed, null, onSuccess, onError);
+        }
+    },
+
+    _doSearch: function(input, currentLocation, onSuccess, onError) {
+        var me = this;
         var endpoint = me._options.endpoint || ogrid.Config.service.endpoint;
         var url = endpoint.replace(/\/rest\/?$/, '') + '/rest/search/smart';
 
-        var payload = { query: $.trim(input) };
+        var payload = { query: input };
         try {
             var mapBounds = ogrid.App.map().getMap().getBounds();
             payload.bounds = {
@@ -37,6 +59,11 @@ ogrid.QSearchProcessor.AISearch = ogrid.QSearchProcessor.extend({
                 maxLon: mapBounds.getEast()
             };
         } catch(e) {}
+
+        if (currentLocation) {
+            payload.current_location = currentLocation;
+            console.log('[AISearch] current_location:', currentLocation);
+        }
 
         $.ajax({
             url: url,
@@ -49,14 +76,14 @@ ogrid.QSearchProcessor.AISearch = ogrid.QSearchProcessor.extend({
             }()),
             timeout: 60000,
             success: function(data) {
-                if (data && data.features !== undefined) {
+                if (data && (data.features !== undefined || data.layers !== undefined)) {
                     onSuccess(data);
                 } else {
                     onError('Unexpected response format from smart search');
                 }
             },
             error: function(xhr, status, err) {
-                onError(err || status);
+                onError(err || status, {jqXHR: xhr, txtStatus: status, errorThrown: err});
             }
         });
     }

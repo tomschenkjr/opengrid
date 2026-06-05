@@ -181,6 +181,24 @@ ogrid.QSearch = ogrid.Class.extend({
     },
 
     _onExecDone: function (results) {
+        // Multi-dataset response: render each layer independently
+        if (results.layers && results.layers.length > 0) {
+            var me = this;
+            $.each(results.layers, function(i, layer) {
+                if (me._isGeoFilterableData(layer)) {
+                    var c = layer.meta.view.options.rendition.color;
+                    layer.meta.view.options.rendition.fillColor = (chroma.scale(['white', c])(0.5)).hex();
+                }
+                ogrid.Event.raise(ogrid.Event.types.REFRESH_DATA, {
+                    resultSetId: ogrid.guid(),
+                    data: layer,
+                    options: { clear: i === 0, passthroughData: {} }
+                });
+            });
+            me._watchMapForSearchAgain();
+            return;
+        }
+
         var autoRequery = this._isGeoFilterableData(results);
         //if geoSpatial filtering is not supported by service, implement filtering locally
         if ( !ogrid.App.serviceCapabilities().geoSpatialFiltering && this._isGeoFilterableData(results)) {
@@ -223,7 +241,7 @@ ogrid.QSearch = ogrid.Class.extend({
         // For proximity searches, auto-fit the map to all result + anchor features
         var me = this;
         var didFitBounds = false;
-        if (prox && results.features && results.features.length > 0) {
+        if (results.features && results.features.length > 0) {
             var lats = [], lons = [];
             var collectCoords = function(fc) {
                 if (!fc || !fc.features) return;
@@ -235,7 +253,7 @@ ogrid.QSearch = ogrid.Class.extend({
                 });
             };
             collectCoords(results);
-            if (prox.layer) { collectCoords(prox.layer); }
+            if (prox && prox.layer) { collectCoords(prox.layer); }
             if (lats.length > 0) {
                 try {
                     var sw = [Math.min.apply(null, lats), Math.min.apply(null, lons)];
@@ -276,13 +294,12 @@ ogrid.QSearch = ogrid.Class.extend({
     },
 
     _onExecError: function (err, rawErrorData, passThroughData) {
-        //err, {jqXHR: jqXHR, txtStatus: txtStatus, errorThrown: errorThrown}, passThroughData
-        //ogrid.events.raise(ogrid.events.O.REFRESH_DATA, results);
-        //default error handling
-        if (rawErrorData.txtStatus === 'timeout') {
+        var rd = rawErrorData || {};
+        if (rd.txtStatus === 'timeout') {
             ogrid.Alert.error('Quick search has timed out.');
         } else {
-            ogrid.Alert.error( (rawErrorData.jqXHR.responseText) ? rawErrorData.jqXHR.responseText : rawErrorData.txtStatus);
+            var msg = (rd.jqXHR && rd.jqXHR.responseText) ? rd.jqXHR.responseText : (typeof err === 'string' ? err : rd.txtStatus);
+            ogrid.Alert.error(msg || 'An error occurred during search.');
         }
     },
 

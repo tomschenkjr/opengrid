@@ -140,6 +140,29 @@ def get_ward_polygon(ward: int) -> str | None:
     return _ward_polygons.get(ward)
 
 
+def _bbox_from_wkt(wkt: str) -> dict | None:
+    """Extract min/max lat/lon from a WKT POLYGON string."""
+    import re
+    coords = re.findall(r"(-?\d+\.\d+)\s+(-?\d+\.\d+)", wkt)
+    if not coords:
+        return None
+    lons = [float(c[0]) for c in coords]
+    lats = [float(c[1]) for c in coords]
+    return {"minLat": min(lats), "maxLat": max(lats), "minLon": min(lons), "maxLon": max(lons)}
+
+
+def get_community_area_bbox(number: int) -> dict | None:
+    """Return {minLat, maxLat, minLon, maxLon} bounding box for a community area."""
+    wkt = _community_polygons.get(number)
+    return _bbox_from_wkt(wkt) if wkt else None
+
+
+def get_ward_bbox(ward: int) -> dict | None:
+    """Return {minLat, maxLat, minLon, maxLon} bounding box for a ward."""
+    wkt = _ward_polygons.get(ward)
+    return _bbox_from_wkt(wkt) if wkt else None
+
+
 def community_area_list_for_prompt() -> str:
     """Return a compact string of all community areas for the Haiku system prompt."""
     lines = []

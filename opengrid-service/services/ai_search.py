@@ -171,15 +171,22 @@ Distance conversions:
 Reference types — use the exact string shown:
   Dataset references: {', '.join(dataset_aliases)}
   OSM references: {osm_refs}
+  User's current location: use "current location" exactly when the user says "near me", "around me", "nearby", "near here", "at my house", "at my home", "where I live", "my location", "in my neighborhood", or any phrase meaning the user's own position
   Street addresses: use the address exactly as given (e.g. "900 W Washington Blvd")
   Named businesses/landmarks: use the exact name (e.g. "Starbucks", "United Center")
 
-Respond with JSON only — no explanation or markdown:
+Respond with JSON only — no explanation or markdown.
+
+Single dataset:
   {{"dataset_id": "crimes", "soql_where": "primary_type = 'ROBBERY' AND date >= '2026-05-01T00:00:00'", "order_by": "date DESC"}}
   {{"dataset_id": "crimes", "soql_where": "date >= '2026-05-01T00:00:00'", "geography": {{"type": "community_area", "name": "Logan Square", "number": 22}}}}
   {{"dataset_id": "crimes", "soql_where": "primary_type = 'ROBBERY'", "proximity": {{"reference": "schools", "distance_meters": 305}}}}
-  {{"dataset_id": "crimes", "soql_where": null, "proximity": {{"reference": "food inspections", "distance_meters": 400}}}}
   {{"dataset_id": "311-graffiti", "soql_where": null, "geography": {{"type": "ward", "number": 35}}, "proximity": {{"reference": "Starbucks", "distance_meters": 200}}}}
+  {{"dataset_id": "crimes", "soql_where": null, "proximity": {{"reference": "current location", "distance_meters": 400}}}}
+
+Multiple datasets — when the query clearly asks to show more than one dataset at once, respond with a JSON array (max 2 items):
+  [{{"dataset_id": "crimes", "soql_where": null}}, {{"dataset_id": "food-inspections", "soql_where": "results = 'Fail'"}}]
+  [{{"dataset_id": "crimes", "soql_where": "primary_type = 'ROBBERY'"}}, {{"dataset_id": "building-permits", "soql_where": null}}]
 
 If the query is about a specific place, address, business, or landmark (not data records), respond:
   {{"dataset_id": null}}"""
@@ -195,7 +202,7 @@ async def nl_to_soql(query: str) -> dict:
     """Single Haiku call → {dataset_id, soql_where, order_by} or {dataset_id: None}."""
     resp = client.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=300,
+        max_tokens=500,
         system=_build_system_prompt(),
         messages=[{"role": "user", "content": query}],
     )
@@ -207,7 +214,10 @@ async def nl_to_soql(query: str) -> dict:
             text = m.group(1)
 
     try:
-        return json.loads(text)
+        parsed = json.loads(text)
+        if isinstance(parsed, list):
+            return [item for item in parsed if isinstance(item, dict)]
+        return parsed if isinstance(parsed, dict) else {"dataset_id": None}
     except json.JSONDecodeError:
         m = re.search(r"\{[\s\S]+\}", text)
         if m:
@@ -271,7 +281,7 @@ def _build_geo_clause(geo: dict, ds: dict) -> str | None:
     """
     Convert a geography intent from Haiku into a SOQL clause.
     Uses a column filter when the dataset has the right column,
-    falls back to within_polygon() spatial query using cached boundary data.
+    falls back to within_box() using the boundary bounding box to keep URLs short.
     """
     if not geo:
         return None
@@ -282,7 +292,6 @@ def _build_geo_clause(geo: dict, ds: dict) -> str | None:
     if geo_type == "community_area":
         number = geo.get("number")
         name = geo.get("name", "")
-        # Haiku may not resolve the number — try resolving from name
         if not number and name:
             number, _ = geography.resolve_community_area(name)
         if not number:
@@ -290,8 +299,11 @@ def _build_geo_clause(geo: dict, ds: dict) -> str | None:
         col = geo_cols.get("community_area")
         if col:
             return f"{col} = '{number}'"
-        polygon = geography.get_community_area_polygon(number)
-        return f"within_polygon(location, '{polygon}')" if polygon else None
+        bbox = geography.get_community_area_bbox(number)
+        if bbox:
+            return (f"within_box(location, {bbox['minLat']}, {bbox['minLon']},"
+                    f" {bbox['maxLat']}, {bbox['maxLon']})")
+        return None
 
     if geo_type == "ward":
         number = geo.get("number")
@@ -300,8 +312,11 @@ def _build_geo_clause(geo: dict, ds: dict) -> str | None:
         col = geo_cols.get("ward")
         if col:
             return f"{col} = {number}"
-        polygon = geography.get_ward_polygon(number)
-        return f"within_polygon(location, '{polygon}')" if polygon else None
+        bbox = geography.get_ward_bbox(number)
+        if bbox:
+            return (f"within_box(location, {bbox['minLat']}, {bbox['minLon']},"
+                    f" {bbox['maxLat']}, {bbox['maxLon']})")
+        return None
 
     if geo_type == "zip":
         code = geo.get("code")
@@ -374,33 +389,32 @@ def _build_reference_layer(locs: list[dict], reference: str) -> dict:
     }
 
 
-async def smart_search(query: str, bounds: dict | None = None) -> dict:
-    """Translate natural language → SOQL → GeoJSON, or fall back to POI geocoding."""
-    import traceback
-    result = await nl_to_soql(query)
-    print(f"[smart_search] query={query!r} haiku={result}")
-
+async def _process_single_result(result: dict, bounds: dict | None, current_location: dict | None = None) -> dict | None:
+    """Process one Haiku result dict → GeoJSON FeatureCollection, or None on no match."""
     dataset_id = result.get("dataset_id")
     if not dataset_id:
-        return await geocode_poi(query)
+        return None
 
     ds = _find_dataset(dataset_id)
     if not ds:
-        return await geocode_poi(query)
+        return None
 
     soql_where = result.get("soql_where") or ""
 
-    # Resolve geographic filter and merge with SOQL
     geo_clause = _build_geo_clause(result.get("geography"), ds)
     if geo_clause:
         soql_where = f"({soql_where}) AND {geo_clause}" if soql_where else geo_clause
 
-    # Fetch more records when proximity filtering will trim the result set
     prox = result.get("proximity")
+
+    # If the caller supplied GPS coordinates but Haiku omitted a proximity field,
+    # default to filtering within 400 m of the user's position rather than falling
+    # back to the broad viewport filter.
+    if current_location and not prox:
+        prox = {"reference": "current location", "distance_meters": 400}
+
     limit = 1000 if prox else 500
 
-    # When no geographic context was provided, scope the query to the current
-    # map viewport so results are relevant to what the user is looking at.
     has_geo_context = bool(result.get("geography") or prox)
     if bounds and not has_geo_context:
         b = bounds
@@ -409,15 +423,10 @@ async def smart_search(query: str, bounds: dict | None = None) -> dict:
         )
         soql_where = f"({soql_where}) AND {viewport_clause}" if soql_where else viewport_clause
 
-    # Proximity queries with no explicit date filter would otherwise trigger a full
-    # table scan on large datasets (crimes, inspections) and time out. Inject a
-    # 90-day window so Socrata can use the date index. We fetch enough records to
-    # cover the buffer area before proximity filtering trims the set.
     if prox and not soql_where:
         cols = ds.get("columns", [])
         date_field = next((c["id"] for c in cols if c.get("dataType") == "date"), None)
         if date_field:
-            dates = _date_context()
             ninety_days_ago = (
                 datetime.now(timezone.utc) - timedelta(days=90)
             ).strftime("%Y-%m-%dT00:00:00")
@@ -431,11 +440,16 @@ async def smart_search(query: str, bounds: dict | None = None) -> dict:
         order=result.get("order_by"),
     )
 
-    # Apply proximity filter and collect reference locations for map display
     proximity_meta = None
     if prox and rows:
         print(f"[smart_search] proximity reference={prox['reference']!r} distance={prox.get('distance_meters')}m")
-        ref_locs = await proximity.fetch_reference_locations(prox["reference"])
+        if prox["reference"].lower().strip() == "current location":
+            if current_location:
+                ref_locs = [{"lat": current_location["lat"], "lon": current_location["lon"], "name": "Your location"}]
+            else:
+                ref_locs = []
+        else:
+            ref_locs = await proximity.fetch_reference_locations(prox["reference"])
         print(f"[smart_search] ref_locs count={len(ref_locs)}")
         if ref_locs:
             distance_m = float(prox.get("distance_meters", 400))
@@ -447,7 +461,7 @@ async def smart_search(query: str, bounds: dict | None = None) -> dict:
                 distance_meters=distance_m,
             )
             label = f"within {_format_distance(distance_m)} of {prox['reference']}"
-            if prox and not result.get("soql_where"):
+            if not result.get("soql_where"):
                 cols = ds.get("columns", [])
                 if next((c for c in cols if c.get("dataType") == "date"), None):
                     label += " (last 90 days)"
@@ -466,3 +480,30 @@ async def smart_search(query: str, bounds: dict | None = None) -> dict:
     if proximity_meta:
         geojson["meta"]["proximity"] = proximity_meta
     return geojson
+
+
+async def smart_search(query: str, bounds: dict | None = None, current_location: dict | None = None) -> dict:
+    """Translate natural language → SOQL → GeoJSON(s), or fall back to POI geocoding."""
+    import asyncio as _asyncio
+    result = await nl_to_soql(query)
+    print(f"[smart_search] query={query!r} haiku={result}")
+
+    # Multi-dataset: Haiku returned a list — process each in parallel
+    if isinstance(result, list):
+        layers = list(await _asyncio.gather(
+            *[_process_single_result(r, bounds, current_location) for r in result if isinstance(r, dict)]
+        ))
+        layers = [l for l in layers if l is not None]
+        if layers:
+            return {"layers": layers}
+        return await geocode_poi(query)
+
+    # Single dataset
+    dataset_id = result.get("dataset_id")
+    if not dataset_id:
+        return await geocode_poi(query)
+
+    layer = await _process_single_result(result, bounds, current_location)
+    if layer is None:
+        return await geocode_poi(query)
+    return layer

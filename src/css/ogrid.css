@@ -415,6 +415,26 @@ h6 > a {
   padding-right: 25px;
 }
 
+#qsearch-placeholder {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 12px;
+  right: 74px;
+  display: flex;
+  align-items: center;
+  color: #999;
+  font-size: 14px;
+  pointer-events: none;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: 1;
+  transition: opacity 0.5s ease;
+  z-index: 4;
+  user-select: none;
+}
+
 
 #ogrid-qsearch-hint {
   right: 34px;
