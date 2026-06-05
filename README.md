@@ -1,60 +1,163 @@
 ![OpenGrid](img/branding/OpenGrid_Logo_Horizontal_3Color.png)
 
-[![Build status-Linux](https://img.shields.io/travis/Chicago/opengrid/master.svg?style=flat-square&label=Linux%20build)](https://travis-ci.org/Chicago/opengrid)[![Build status-Windows](https://img.shields.io/appveyor/ci/tomschenkjr/opengrid/master.svg?style=flat-square&label=Windows%20build)](https://ci.appveyor.com/project/tomschenkjr/opengrid)[![Node.js dependencies](https://img.shields.io/coveralls/Chicago/opengrid/master.svg?style=flat-square)](https://coveralls.io/github/Chicago/opengrid)[![Node.js](https://img.shields.io/node/v/gh-badges.svg?style=flat-square)](https://david-dm.org/Chicago/opengrid)[![Node.js dependencies](https://img.shields.io/david/Chicago/opengrid.svg?style=flat-square)](https://david-dm.org/Chicago/opengrid)[![Node.js devdependencies](https://img.shields.io/david/dev/chicago/opengrid.svg?style=flat-square)](https://david-dm.org/Chicago/opengrid#info=devDependencies&view=table)
+OpenGrid is an open-source, interactive map platform for exploring Chicago open data. It supports natural language queries powered by AI, proximity-based spatial filtering, neighborhood boundary visualization, and plain-language summarization of results.
 
-OpenGrid an open-source, interactive map platform that allows users to explore multiple data sources in an easy-to-use interface. Developed to support situational awareness, incident monitoring and responses, historical data retrieval, and real-time advanced analytics. Users can perform advanced queries to filter data, search within custom boundaries, or based on the users location. Other GIS data, such as weather and Shapefiles can be overlaid on the map with other data. OpenGrid is natively compatible with desktops and mobile devices.
+This fork is self-hosted and pulls live data from the [Chicago Data Portal](https://data.cityofchicago.org) (Socrata) via a custom Python service layer.
 
-OpenGrid uses a service layer to retrieve data from an underlying data store.
+## Features
 
-## Important Links
+- **AI-powered natural language search** — Type queries like "crimes in Logan Square last month" or "rodent complaints near schools" and the app translates them into structured Socrata SoQL queries using Claude.
+- **Geolocation-aware proximity search** — Queries like "food inspections around me" or "crimes near me" request the browser's GPS and filter results within a configurable radius.
+- **Neighborhood boundary display** — Searching for a community area (e.g., "Logan Square") or a data query scoped to one draws the boundary outline on the map.
+- **Multi-dataset queries** — Ask for two datasets at once ("show me crimes and 311 requests in Pilsen") and both layers render together.
+- **Plain-language summary** — A "Summarize" button sends the current results to Claude and displays a one-sentence summary with key highlights.
+- **Advanced search panel** — Traditional filter-based data exploration (still available via "Find Data").
 
-* User Documentation: http://docs.opengrid.io
-* Repository for User Interface: https://github.com/Chicago/opengrid
-* Repository for Planning Documentation and Meeting Notes: https://github.com/Chicago/opengrid/wiki
-* Issues: https://github.com/Chicago/opengrid/issues
-* Mailing List & Discussion: https://groups.google.com/forum/#!forum/opengrid-chicago
+## Architecture
 
-##  System Requirements
+```
+Browser  ──►  dist/          (static frontend, Leaflet + jQuery)
+                │
+                ▼
+         opengrid-service/   (Python / FastAPI)
+                │
+                ├──► Anthropic API  (Claude Haiku — query translation & summarization)
+                └──► Chicago Data Portal  (Socrata REST API)
+```
 
-Web server for deployment and Open Grid Service Package. 
+The frontend is a static site served from `dist/`. The service layer (`opengrid-service/`) implements the OpenGrid REST API contract and is the only component that talks to external APIs.
 
-### Required Software
+## System Requirements
 
-  * Java Script IDE
-  * Node.js
-  * Npm
+### Frontend
+- Any modern web server (nginx, Apache, Python `http.server`, etc.)
+- Node.js + npm (for rebuilding the JS/CSS bundles — optional if using pre-built `dist/`)
 
-### Browser Requirements:
+### Service Layer
+- Python 3.11+
+- An [Anthropic API key](https://console.anthropic.com/)
+- Optional: a [Socrata App Token](https://dev.socrata.com/foundry/data.cityofchicago.org/) to avoid throttling
 
-OpenGrid has been tested on IE 10+, Chrome, Firefox, and Safari on the desktop. It has also been tested on iOS using Safari and Android using the Chrome browser.
-
-### Architecture
-
-This repository contains the code which users interact with in the web browser. OpenGrid depends on a service layer, which then communicates with a data storage layer. Currently, OpenGrid is compatible with [MongoDB](http://mongodb.com) or [Plenario](http://plenar.io) using their respective service layers.
-
-Read the documentation for a description of the service layer and available test instances.
+### Browser Support
+Chrome, Firefox, Safari, Edge. Also tested on iOS Safari and Android Chrome.
 
 ## Installation
 
-Download OpenGrid Code:
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/Chicago/opengrid.git
+git clone https://github.com/tomschenkjr/opengrid.git
+cd opengrid
 ```
 
-After the initial OpenGrid Code has been downloaded install the dependencies [Phantom JS](http://phantomjs.org/download.html) and [npm](https://www.npmjs.com/package/npm).
+### 2. Set up the service layer
 
-After the release package has been built deploy the files under the ./dist folder to your web server.  For complete instructions on the entire process reference the [build procedures](http://opengrid.readthedocs.io/en/latest/Build%20Procedures/) document.
+```bash
+cd opengrid-service
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-## Submit a bug
+Create a `.env` file in `opengrid-service/`:
 
-We would like to hear about any bugs or odd behavior that you uncover. Use the [issue tracker](../../issues/) to open a new item. When describing the issue, we recommend that you discuss the following items:
+```env
+ANTHROPIC_API_KEY=sk-ant-...
+SOCRATA_APP_TOKEN=your_socrata_token   # optional but recommended
+CORS_ORIGINS=*                         # restrict in production
+PORT=8080
+```
 
-  * Describe the bug
-  * Describe the steps you did to discover the bug
-  * What was the expected outcome of the above steps?
-  * Please provide screenshots, if applicable
+Start the service:
 
-## How to contribute code
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8080 --reload
+```
 
-If you would like to contribute to this project, please see the [contributing guidelines](CONTRIBUTING.md) for the guidelines.
+The service is available at `http://localhost:8080`. Health check: `GET /health`.
+
+### 3. Configure the frontend endpoint
+
+Edit `config/EnvSettings.js` to point at your service:
+
+```js
+ogrid.Config.service.endpoint = 'http://localhost:8080/opengrid-service/rest';
+```
+
+### 4. Serve the frontend
+
+Serve the `dist/` directory from any static web server:
+
+```bash
+# Quick local test
+python -m http.server 8000 --directory dist
+```
+
+Open `http://localhost:8000` in your browser.
+
+### 5. (Optional) Rebuild the dist bundle
+
+> **Note:** The build pipeline uses Gulp 3, which is incompatible with Node.js v12+. If you need to rebuild after editing source files, use the `uglifyjs` and CSS concatenation approach described in the project wiki, or downgrade to Node.js v10.
+
+## Available Datasets
+
+| Dataset | Socrata ID | Description |
+|---|---|---|
+| Crimes | `ijzp-q8t2` | Chicago Police Department incident reports |
+| Food Inspections | `4ijn-s7e5` | CDPH restaurant and food establishment inspections |
+| Building Permits | `ydr8-5enu` | City-issued building permits |
+| 311 Service Requests | `v6vf-nfxy` | All 311 service requests (graffiti, potholes, rodents, etc.) |
+
+Proximity-only datasets (used as spatial anchors, not shown as primary layers):
+
+| Dataset | Socrata ID | Used for |
+|---|---|---|
+| CPS Schools | `kh4r-387c` | "near schools" queries |
+
+## Natural Language Search Examples
+
+The search bar accepts plain English. Examples:
+
+- `crimes in Logan Square last month`
+- `rodent complaints near me`
+- `failed food inspections in the Loop`
+- `building permits near Wicker Park this year`
+- `crimes and 311 requests in Pilsen`
+- `West Town` *(draws the neighborhood boundary)*
+- `graffiti removal requests in Ward 35 near a Starbucks`
+
+After results appear, click **Summarize** for a one-sentence AI-generated overview.
+
+## Service Layer API
+
+The service implements the OpenGrid REST contract at `/opengrid-service/rest`. Key endpoints:
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/search/smart` | Natural language → GeoJSON results |
+| `POST` | `/search/summarize` | Generate plain-language summary of results |
+| `GET` | `/datasets` | List available datasets |
+| `GET` | `/capabilities` | Service capabilities |
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `ANTHROPIC_API_KEY` | Yes | — | Anthropic API key for Claude |
+| `SOCRATA_APP_TOKEN` | No | — | Socrata app token (avoids throttling) |
+| `CORS_ORIGINS` | No | `*` | Comma-separated allowed origins |
+| `PORT` | No | `8080` | Port the service listens on |
+
+## Submit a Bug
+
+Use the [issue tracker](../../issues/) to report bugs. Please include:
+
+- Description of the bug
+- Steps to reproduce
+- Expected vs. actual behavior
+- Screenshots if applicable
+- Browser and OS
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.

@@ -1,5 +1,47 @@
 # Getting Started
 
+There are two ways to find data in OpenGrid: the **Smart Search bar** (recommended) and the **Advanced Search panel**. Most users will find the search bar faster for everyday queries.
+
+---
+
+## Smart Search Bar
+
+The search bar at the top of the page accepts plain-English questions. OpenGrid uses AI to translate your question into a structured query, fetch matching records from the Chicago Data Portal, and plot them on the map.
+
+### How to use it
+
+1. Click the search bar at the top of the page.
+2. Type a natural language question and press **Enter** or click the search icon.
+3. Results appear on the map as colored dots. The map auto-fits to the result extent.
+4. For queries that name a neighborhood or community area, the boundary is also drawn.
+5. Click **Summarize** (appears after results load) for a one-sentence plain-language overview.
+
+### Query examples
+
+| Query | What it returns |
+|---|---|
+| `crimes in Logan Square last month` | Crime incidents filtered to Logan Square community area, last 30 days |
+| `rodent complaints near me` | 311 rodent service requests within ~400 m of your current GPS location |
+| `failed food inspections in the Loop` | Food inspections with result = Fail, filtered to the Loop |
+| `building permits near Wicker Park this year` | Permits issued since Jan 1 in the West Town community area |
+| `crimes and 311 requests in Pilsen` | Two layers simultaneously: crimes + service requests in Lower West Side |
+| `Logan Square` | Draws the Logan Square community area boundary with map auto-centered |
+| `Ward 35` | Draws the Ward 35 boundary |
+
+### Location-based queries ("near me")
+
+Phrases like **near me**, **around me**, **in my neighborhood**, **at my house**, and similar expressions trigger a browser geolocation request. Once you allow location access, results are filtered to within approximately 400 meters (¼ mile) of your position.
+
+### Summarize
+
+After results load, a **Summarize** button appears next to the search bar. Clicking it sends the current results to an AI model and displays a one-sentence summary — including the record count, geographic concentration, and notable patterns — overlaid at the top of the map.
+
+---
+
+## Advanced Search Panel (Find Data)
+
+For structured, filter-based queries, use the **Find Data** panel (click "Find Data" in the top navigation).
+
 1. In Select Data – Select the Add Dataset Link.
 
 2. A drop list of available datasets appears, select the appropriate Dataset.
