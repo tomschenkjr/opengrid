@@ -248,39 +248,44 @@ ogrid.QSearch = ogrid.Class.extend({
             });
         }
 
-        // For proximity searches, auto-fit the map to all result + anchor features
+        // Auto-fit the map to the results extent.
+        // Point features: collect lat/lon scalars and derive a bounding box.
+        // Polygon features (boundary layers): delegate to Leaflet's own bounds
+        // calculation, since coordinates are nested rings, not scalars.
         var me = this;
         var didFitBounds = false;
         if (results.features && results.features.length > 0) {
-            var lats = [], lons = [];
-            var collectCoords = function(fc) {
-                if (!fc || !fc.features) return;
-                $.each(fc.features, function(i, f) {
-                    if (f.geometry && f.geometry.coordinates) {
-                        lons.push(f.geometry.coordinates[0]);
-                        lats.push(f.geometry.coordinates[1]);
-                    }
-                });
-            };
-            collectCoords(results);
-            if (prox && prox.layer) { collectCoords(prox.layer); }
-            if (lats.length > 0) {
-                try {
-                    var sw = [Math.min.apply(null, lats), Math.min.apply(null, lons)];
-                    var ne = [Math.max.apply(null, lats), Math.max.apply(null, lons)];
-                    ogrid.App.map().getMap().fitBounds([sw, ne], { padding: [40, 40] });
-                    didFitBounds = true;
-                } catch(e) {}
-            }
-        }
-
-        // For pure-boundary responses (community area / ward lookup with no data),
-        // fit the map to the polygon's own extent using Leaflet's geoJSON helper.
-        if (!didFitBounds && geoBoundary && results.features && results.features.length === 0) {
             try {
-                var bLayer = L.geoJSON(geoBoundary);
-                ogrid.App.map().getMap().fitBounds(bLayer.getBounds(), { padding: [40, 40] });
-                didFitBounds = true;
+                var firstGeom = results.features[0] && results.features[0].geometry;
+                var isPolygon = firstGeom && firstGeom.type !== 'Point' && firstGeom.type !== 'MultiPoint';
+
+                if (isPolygon) {
+                    // Pure boundary response — let Leaflet compute bounds from geometry
+                    ogrid.App.map().getMap().fitBounds(
+                        L.geoJSON(results).getBounds(), { padding: [40, 40] }
+                    );
+                    didFitBounds = true;
+                } else {
+                    // Point data — accumulate scalars across main results and any anchor layer
+                    var lats = [], lons = [];
+                    var collectCoords = function(fc) {
+                        if (!fc || !fc.features) return;
+                        $.each(fc.features, function(i, f) {
+                            if (f.geometry && f.geometry.coordinates) {
+                                lons.push(f.geometry.coordinates[0]);
+                                lats.push(f.geometry.coordinates[1]);
+                            }
+                        });
+                    };
+                    collectCoords(results);
+                    if (prox && prox.layer) { collectCoords(prox.layer); }
+                    if (lats.length > 0) {
+                        var sw = [Math.min.apply(null, lats), Math.min.apply(null, lons)];
+                        var ne = [Math.max.apply(null, lats), Math.max.apply(null, lons)];
+                        ogrid.App.map().getMap().fitBounds([sw, ne], { padding: [40, 40] });
+                        didFitBounds = true;
+                    }
+                }
             } catch(e) {}
         }
 

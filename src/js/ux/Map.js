@@ -538,7 +538,8 @@ ogrid.Map = ogrid.Class.extend({
                 //we'll use the resultset Id to see if a layer for the same query needs to be replaced on our layer control
                 resultsLayer.opengridResultsetId = rsId;
 
-                //store latest data timestamp
+                //store latest data timestamp (guard: polygon layers never call pointToLayer)
+                if (!this._markers[rsId]) this._markers[rsId] = {};
                 this._markers[rsId].latestDataTs = latestDataTs;
 
                 //add query results to layer control
