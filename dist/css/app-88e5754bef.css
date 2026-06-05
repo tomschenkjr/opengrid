@@ -605,9 +605,11 @@ h6 > a {
   padding-right: 25px;
 }
 
-/* Summarize button — shown only when results are on the map */
+/* Summarize button — shown only when results are on the map.
+   No top padding: Bootstrap's navbar-btn class on the <a> already
+   applies margin-top:8px to vertically center within the navbar. */
 #ogrid-summarize-wrapper {
-  padding: 8px 0 0 8px;
+  padding-left: 8px;
 }
 
 /* Summary panel — flex child of #ogrid-map-overlays, centered with 20% side margins.
