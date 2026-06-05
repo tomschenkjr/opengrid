@@ -71,11 +71,12 @@ ogrid.Config = {
         //first base layer becomes base layer selected by default
        baseLayers:[{
             name: 'Streets',
-            url:'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+            url:'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
 			useEsri: false,
             options: {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                maxZoom: 19
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 20
             }}
         , 
 		{
