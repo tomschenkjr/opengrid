@@ -413,7 +413,19 @@ async def _process_single_result(result: dict, bounds: dict | None, current_loca
     if current_location and not prox:
         prox = {"reference": "current location", "distance_meters": 400}
 
-    limit = 1000 if prox else 500
+    # For "current location" proximity, push the spatial filter into SoQL via
+    # within_circle() so Socrata does the work — no row-count cap, no Python loop.
+    _using_circle = False
+    if current_location and prox and prox.get("reference", "").lower().strip() == "current location":
+        radius_m = float(prox.get("distance_meters", 400))
+        circle_clause = (
+            f"within_circle(location, {current_location['lat']}, "
+            f"{current_location['lon']}, {radius_m})"
+        )
+        soql_where = f"({soql_where}) AND {circle_clause}" if soql_where else circle_clause
+        _using_circle = True
+
+    limit = 500 if _using_circle else (1000 if prox else 500)
 
     has_geo_context = bool(result.get("geography") or prox)
     if bounds and not has_geo_context:
