@@ -1,0 +1,887 @@
+.ogrid-admin-ui {
+    background-color: #E8E8E8;
+    position: fixed;
+    right: -700px;
+    top: 50px;
+    width: 700px;
+    height:100%;
+
+    /* should be on top of Leaflet's attribution text and layer control */
+    z-index: 2500;
+}
+
+
+.ogrid-admin-ui.visible {
+    right: 0px;
+}
+
+@media (max-width: 700px) {
+    .ogrid-admin-ui {
+        width: 100%;
+    }
+}.ogrid-chart {
+}
+
+.ogrid-chart-modal .modal-header {
+    font-weight: bold;
+}
+
+.ogrid-chart-options .form-control-static {
+    padding: 0px;
+}
+
+.ogrid-chart-options .form-control {
+    padding: 0px;
+    height: 22px;
+}
+
+/*@media (min-width: 845px) {
+    .ogrid-chart-modal {
+        width: 50%;
+        margin: 10px auto 30px auto;
+    }
+}*/
+
+/*((.ogrid-chart-body {
+    height: 600px;
+}
+
+.ogrid-chart-canvas {
+    width: 100%  !important;
+    height: 100%  !important;
+}*/
+/*
+ * GeoFilter.css
+ * Styles used by ogrid.GeoFilter
+*/
+@media (min-width: 700px) {
+    .form-inline .form-control {
+        display: inline-block;
+        width: auto;
+        vertical-align: middle;
+    }
+}
+
+
+.adv-search-geofilter > .form-inline {
+    padding:4px;
+}
+.adv-search-geofilter > .form-inline > * {
+    margin:2px 2px !important;
+}
+#ogrid-manage-groups {
+    height: 100%;
+}
+
+.ogrid-manage-groups .bootstrap-table {
+    padding-top: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    background-color: #fff;
+}
+
+#group-edit-modal .modal-dialog {
+    margin-top: 80px;
+}
+
+.ogrid-manage-groups .fixed-table-body {
+    overflow-x: hidden;
+}
+#ogrid-manage-queries {
+    height: 100%;
+}
+
+.ogrid-manage-queries .bootstrap-table {
+    padding-top: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    background-color: #fff;
+    height: 100%;
+}
+
+.ogrid-manage-queries .fixed-table-body {
+    overflow-x: hidden;
+}
+/*
+ * Session.css
+ * Styles used by ogrid.Session particularly the login form
+*/
+.ogrid-login {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+}
+
+.grid-login h2 {
+    font-size: 30px;
+}
+
+.login-panel {
+    max-width: 500px;
+    margin: 100px auto;
+}
+
+
+.login-panel span.glyphicon {
+    color: #adadad;
+    position: absolute;
+    left: 0;
+    padding: 10px 0 0 27px
+}
+
+
+.login-panel input {
+    background: #fafafa;
+    border: none;
+    padding-left: 40px;
+    border: 1px solid #EDEDED;
+    margin-bottom: 20px;
+}
+
+.login-panel .row {
+    margin-top: 10px;
+}
+
+.login-panel button {
+    font-weight: bold;
+    line-height: 24px;
+}
+
+
+.login-panel .alert {
+    margin-top: 20px;
+    margin-bottom: 10px;
+}#ogrid-manage-users {
+    height: 100%;
+}
+
+.ogrid-manage-users .bootstrap-table {
+    padding-top: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 10px;
+    background-color: #fff;
+    height: 100%;
+}
+
+#user-edit-modal .modal-dialog {
+    margin-top: 80px;
+}
+
+
+.ogrid-manage-users .fixed-table-body {
+    overflow-x: hidden;
+}
+/*
+ * ogrid.css
+ * Root namespace styles
+*/
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+#ogrid-nav {
+  z-index: 3001;
+}
+
+#ogrid-search {
+  margin-left: -15px;
+  min-width: 130px;
+}
+
+/* Allow focused form to overflow below the navbar into the map */
+.navbar, .navbar-header, .navbar .container-fluid {
+  overflow: visible;
+}
+
+/* Anchor point for the absolute-positioned focus overlay */
+.navbar .container-fluid {
+  position: relative;
+}
+
+/* On focus — tablet and up: the form breaks out of #ogrid-search and
+   spans the full navbar container, dropping below into the map */
+@media (min-width: 768px) {
+  #ogrid-search:focus-within .navbar-form {
+    position: absolute;
+    top: 5px;
+    left: 15px;
+    right: auto;
+    width: 80%;
+    z-index: 9999;
+    padding: 8px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 10px 36px rgba(0, 0, 0, 0.2);
+  }
+
+  #ogrid-search:focus-within .form-control {
+    height: 60px;
+    font-size: 18px;
+    border-color: transparent;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  #ogrid-search:focus-within .input-group-addon {
+    height: 60px;
+    line-height: 60px;
+    border-color: transparent;
+    background: transparent;
+  }
+
+  #ogrid-search:focus-within #ogrid-qsearch-hint {
+    top: 0;
+    height: 60px;
+    line-height: 60px;
+  }
+}
+
+
+#ogrid-search.pull-left.col-xs-7 {
+  padding: 0px;
+  width: 280px;
+}
+
+/* keep at the top, not stack per normal Bootstrap behavior */
+@media (min-width: 450px) {
+  #ogrid-search {
+    width: 280px;
+    margin-left: 0px;
+  }
+}
+
+/* tablet */
+@media (min-width: 768px) {
+  #ogrid-search {
+    width: 600px;
+  }
+}
+
+/* desktop */
+@media (min-width: 992px) {
+  #ogrid-search {
+    width: 800px;
+  }
+}
+
+/* iPhone 6 Plus or smaller */
+@media (max-width: 450px) {
+  #ogrid-search {
+    /*width: 277px;*/
+    width: calc(100% - 180px);
+    margin-left: 0px;
+  }
+  #ogrid-search.pull-left.col-xs-7 {
+    padding: 0px;
+    width: calc(100% - 180px);
+  }
+}
+
+
+@media (max-width: 840px) {
+  #ogrid-menu p {
+    margin-right: 5px;
+  }
+}
+
+
+/* we need to override z-index of modals (used by bootbox) due to high z-index of the leaflet elements
+and consequently our other UX elements */
+.modal {
+  z-index: 8000;
+}
+
+#ogrid-content {
+  position: absolute;
+  padding-left: 0;
+  padding-right: 0;
+  top: 50px;
+  left: 0;
+  bottom: 22px;
+  right: 0;
+}
+
+/* Flex column that stacks the summary panel above "Search this area".
+   pointer-events:none lets map interactions fall through the empty gaps. */
+#ogrid-map-overlays {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  right: 0;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+#ogrid-search-again {
+  display: none;
+  pointer-events: auto;
+  padding: 8px 20px;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+#ogrid-search-again:hover {
+  background: #f5f5f5;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  left:0;
+  top:0;
+  bottom: 50px;
+
+  /*-box-shadow: 0 0 10px rgba(0,0,0,0.5);*/
+}
+
+#ogrid-footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  margin-bottom: 0;
+
+  /* should be on top of Leaflet's attribution text */
+  z-index: 3000;
+}
+
+
+
+
+.flyover {
+  left: 150%;
+  overflow: hidden;
+  position: fixed;
+  width: 50%;
+  opacity: 0.9;
+  z-index: 1050;
+  transition: left 0.6s ease-out 0s;
+}
+
+.flyover-centered {
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.flyover.in {
+  left: 50%;
+}
+
+.flyover-bottom {
+  bottom: 10px;
+}
+
+.ogrid-footer-panel-heading {
+  padding: 0;
+  border-top-left-radius: 0px;
+  border-top-right-radius: 0px;
+}
+
+.ogrid-footer-panel-group .ogrid-footer-panel {
+  border-radius: 0;
+  margin-bottom: 0;
+}
+
+h6 > a {
+  background-color: #E8E8E8;
+  width: 100%;
+  display: block;
+  padding: 10px 15px;
+  outline: none;
+}
+
+/*.panel-title a:hover, .panel-title a:focus, .panel-title a:active {
+  text-decoration: none;
+  outline: none;
+}*/
+
+#ogrid-panel-caret {
+  margin-top: 2px;
+  margin-right: 2px;
+  cursor: pointer;
+}
+
+.ogrid-task-pane {
+  background-color: #E8E8E8;
+  position: fixed;
+  top: 50px;
+  width: 600px;
+  height: 100%;
+  right: -600px;
+
+  /* should be on top of Leaflet's attribution text and layer control */
+  z-index: 2500;
+}
+
+.ogrid-task-pane.visible {
+  right: 0px;
+}
+
+@media (max-width: 600px) {
+  .ogrid-task-pane {
+    width: 100%;
+  }
+}
+
+
+
+.ogrid-table {
+  padding-top: 0px;
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+/*.dataTables_wrapper {
+  min-height: 300px;
+}
+*/
+
+.ogrid-nav-btn {
+  margin-left: 5px;
+}
+
+.ogrid-tab-link {
+}
+
+.flyover {
+  /* bumped up due to leaflet z-index */
+  z-index: 5000;
+}
+
+
+
+.glyphicon-refresh-animate {
+  -animation: spin .7s infinite linear;
+  -webkit-animation: spin2 .7s infinite linear;
+}
+
+@-webkit-keyframes spin2 {
+  from { -webkit-transform: rotate(0deg);}
+  to { -webkit-transform: rotate(360deg);}
+}
+
+@keyframes spin {
+  from { transform: scale(1) rotate(0deg);}
+  to { transform: scale(1) rotate(360deg);}
+}
+
+#ogrid-busy {
+  position: absolute;
+  top:calc(50% - 46px/2); /* height divided by 2*/
+  left:calc(50% - 130px/2); /* width divided by 2*/
+  z-index: 5000;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.tab-content {
+  /*padding-top: 10px;*/
+}
+
+.panel-body {
+  margin-right: 10px;
+  margin-left: 10px;
+}
+
+.form-in-panel {
+  margin-right: 10px;
+  margin-left: 10px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.spinner {
+  width: 100px;
+}
+.spinner input {
+  text-align: right;
+}
+.input-group-btn-vertical {
+  position: relative;
+  white-space: nowrap;
+  width: 1%;
+  vertical-align: middle;
+  display: table-cell;
+}
+.input-group-btn-vertical > .btn {
+  display: block;
+  float: none;
+  width: 100%;
+  max-width: 100%;
+  padding: 8px;
+  margin-left: -1px;
+  position: relative;
+  border-radius: 0;
+}
+.input-group-btn-vertical > .btn:first-child {
+  border-top-right-radius: 4px;
+}
+.input-group-btn-vertical > .btn:last-child {
+  margin-top: -2px;
+  border-bottom-right-radius: 4px;
+}
+.input-group-btn-vertical i{
+  position: absolute;
+  top: 0;
+  left: 4px;
+}
+
+/* hover causes jitter when advanced search loses focus, do it the normal way */
+/*#build-query:hover {*/
+#build-query {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+
+.navbar .navbar-form{
+  padding: 0 15px;
+  border: 0;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+  display: block;
+  width: 100%;
+}
+
+#qsearch {
+  display: table;
+  width: 100%;
+}
+
+#ogrid-footer td, th {
+  /*white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;*/
+}
+
+/* For Bootstrap responsive table to work in Firefox */
+@-moz-document url-prefix() {
+  fieldset { display: table-cell; }
+}
+
+.nav-tabs > li .close {
+  margin: -2px 0 0 10px;
+  font-size: 18px;
+}
+
+#tableview .panel-body {
+  margin-left: 0;
+  margin-right: 0;
+  padding: 5px;
+}
+
+#tableview .nav >li > a {
+  padding: 8px 8px
+}
+
+.table-striped tbody tr.highlight td {
+  background-color: #deebf7;
+}
+
+#tableview tbody tr.new-data-highlight td {
+  background-color: #d9f0a3;
+}
+
+#qsearch-input {
+  padding-right: 25px;
+}
+
+/* Summarize button — shown only when results are on the map */
+#ogrid-summarize-wrapper {
+  padding: 8px 0 0 8px;
+}
+
+/* Summary panel — flex child of #ogrid-map-overlays, centered with 20% side margins */
+#ogrid-summary-panel {
+  width: 60%;
+  pointer-events: auto;
+  background: #fff;
+  border: 2px solid #2e76c4;
+  border-radius: 12px;
+  padding: 12px 36px 12px 16px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+}
+
+#ogrid-summary-panel .close {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 20px;
+  color: #555;
+  opacity: 0.7;
+}
+
+#ogrid-summary-panel .close:hover {
+  opacity: 1;
+}
+
+.ogrid-summary-header {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  color: #2e76c4;
+  margin-bottom: 8px;
+}
+
+.ogrid-summary-header .fa {
+  margin-right: 4px;
+}
+
+#ogrid-summary-text {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #1a1a1a;
+}
+
+#ogrid-summary-text mark {
+  background: rgba(255, 215, 0, 0.55);
+  padding: 0 3px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+#ogrid-summary-text .ogrid-summary-loading {
+  color: #888;
+  font-style: italic;
+}
+
+#qsearch-placeholder {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 12px;
+  right: 74px;
+  display: flex;
+  align-items: center;
+  color: #999;
+  font-size: 14px;
+  pointer-events: none;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: 1;
+  transition: opacity 0.5s ease;
+  z-index: 4;
+  user-select: none;
+}
+
+
+#ogrid-qsearch-hint {
+  right: 34px;
+  cursor: pointer;
+  color: #ccc;
+  position: absolute;
+  display: block;
+  width: 34px;
+  height: 34px;
+  line-height: 34px;
+  text-align: center;
+  z-index: 5;
+}
+
+#ogrid-qsearch-hint:focus {
+  outline: none;
+}
+
+#qsearch .popover {
+  width: 500px;
+}
+
+.popover {
+  width: 500px;
+}
+
+.popover-content {
+  padding: 10px;
+  width: 272px;
+  overflow-y: auto;
+  height: 600px;
+}
+
+#ogrid-adv-content .panel-heading {
+  cursor: pointer;
+}
+
+/* mobile styles for quick search hint */
+@media (max-width: 480px) {
+  /*#qsearch .popover {*/
+  .popover {
+    width: 230px;
+  }
+}
+
+
+.small-screen-menuitem {
+  display: block;
+  clear: both;
+  font-weight: 400;
+  white-space: nowrap;
+  text-decoration: none;
+  background-color: transparent;
+  box-sizing: border-box;
+  color: #777;
+  line-height: 25px;
+  padding: 5px 15px 5px 25px;
+  cursor: auto;
+  text-align: -webkit-match-parent;
+  list-style: none;
+  font-size: 14px;
+  border: none;
+  padding-left: 15px;
+}
+
+.leaflet-control-layers-list label {
+  font-weight: normal;
+}
+
+/* make heatmap appear on top of dots, just like in leaflet 0.7.3; this changed in leaflet 1.0.1 */
+.leaflet-map-pane canvas {
+  z-index: 250;
+}
+
+/* override some Leaflet styles */
+
+/* For hi res screens, use 2x */
+@media only screen and (min--moz-device-pixel-ratio: 2), only screen and (-o-min-device-pixel-ratio: 2/1), only screen and (-webkit-min-device-pixel-ratio: 2), only screen and (min-device-pixel-ratio: 2) {
+  .glyphicon-question-sign {
+    font-size: 18px;
+  }
+  .fa-home, .fa-dot-circle-o {
+    font-size: 20px;
+    margin-left: -5px;
+  }
+
+  .leaflet-control-locate a {
+    background-position: -2px -1px;
+  }
+
+  .leaflet-control-fullscreen a {
+    background-position: 2px 1px;
+  }
+}
+
+@media (max-width: 450px), (max-height: 450px) {
+  /* hide the zoom box control on smaller devices, not needed */
+  .leaflet-zoom-box-control {
+    display: none;
+  }
+  .leaflet-control-fullscreen  {
+    display: none;
+  }
+}
+
+/* make Columns menu always left aligned to prevent going over the left edge on mobile */
+/* override table view */
+.bootstrap-table .fixed-table-toolbar .columns div[title='Columns'] .dropdown-menu {
+  left: 0px;
+  right: auto;
+}
+
+/*widen heatmap dropdown menu to avoid wrapping of text */
+.bootstrap-table .fixed-table-toolbar .columns div[title='Heat Map'] .dropdown-menu {
+  width: 165px;
+}
+.map-info {
+  padding: 6px 8px;
+  font: 14px/16px Arial, Helvetica, sans-serif;
+  background: white;
+  background: rgba(255,255,255,0.8);
+  box-shadow: 0 0 15px rgba(0,0,0,0.2);
+  border-radius: 5px;
+}
+.map-info h4 {
+  margin: 0 0 5px;
+  color: #777;
+}
+
+.legend {
+  text-align: left;
+  line-height: 18px;
+  color: #555;
+}
+
+.legend i {
+  width: 18px;
+  height: 18px;
+  float: left;
+  margin-right: 8px;
+  opacity: 0.7;
+}
+
+.legend .ogrid-legend-circle {
+  border-radius: 50%;
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+}
+
+.ogrid-logo-small {
+  width: 32px;
+  height: 32px;
+  /*padding-top: 9px;*/
+  margin-top: 10px;
+  margin-left: 10px;
+}
+
+.glyphicon {
+    position: relative;
+    top: 1px;
+    display: inline-block;
+    font-family: 'Glyphicons Halflings';
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}/* BEGIN Light */
+@font-face {
+  font-family: 'Open Sans';
+  src: url("../fonts/opensans/FontFaceKit/Light/OpenSans-Light.eot?v=1.1.0");
+  src: url("../fonts/opensans/FontFaceKit/Light/OpenSans-Light.eot?#iefix&v=1.1.0") format("embedded-opentype"), url("../fonts/opensans/FontFaceKit/Light/OpenSans-Light.woff2?v=1.1.0") format("woff2"), url("../fonts/opensans/FontFaceKit/Light/OpenSans-Light.woff?v=1.1.0") format("woff"), url("../fonts/opensans/FontFaceKit/Light/OpenSans-Light.ttf?v=1.1.0") format("truetype"), url("../fonts/opensans/FontFaceKit/Light/OpenSans-Light.svg?v=1.1.0#Light") format("svg");
+  font-weight: 300;
+  font-style: normal; }
+/* END Light */
+/* BEGIN Regular */
+@font-face {
+  font-family: 'Open Sans';
+  src: url("../fonts/opensans/FontFaceKit/Regular/OpenSans-Regular.eot?v=1.1.0");
+  src: url("../fonts/opensans/FontFaceKit/Regular/OpenSans-Regular.eot?#iefix&v=1.1.0") format("embedded-opentype"), url("../fonts/opensans/FontFaceKit/Regular/OpenSans-Regular.woff2?v=1.1.0") format("woff2"), url("../fonts/opensans/FontFaceKit/Regular/OpenSans-Regular.woff?v=1.1.0") format("woff"), url("../fonts/opensans/FontFaceKit/Regular/OpenSans-Regular.ttf?v=1.1.0") format("truetype"), url("../fonts/opensans/FontFaceKit/Regular/OpenSans-Regular.svg?v=1.1.0#Regular") format("svg");
+  font-weight: normal;
+  font-style: normal; }
+/* END Regular */
+/* BEGIN Semibold */
+@font-face {
+  font-family: 'Open Sans';
+  src: url("../fonts/opensans/FontFaceKit/Semibold/OpenSans-Semibold.eot?v=1.1.0");
+  src: url("../fonts/opensans/FontFaceKit/Semibold/OpenSans-Semibold.eot?#iefix&v=1.1.0") format("embedded-opentype"), url("../fonts/opensans/FontFaceKit/Semibold/OpenSans-Semibold.woff2?v=1.1.0") format("woff2"), url("../fonts/opensans/FontFaceKit/Semibold/OpenSans-Semibold.woff?v=1.1.0") format("woff"), url("../fonts/opensans/FontFaceKit/Semibold/OpenSans-Semibold.ttf?v=1.1.0") format("truetype"), url("../fonts/opensans/FontFaceKit/Semibold/OpenSans-Semibold.svg?v=1.1.0#Semibold") format("svg");
+  font-weight: 600;
+  font-style: normal; }
+/* END Semibold */
+/* BEGIN Bold */
+@font-face {
+  font-family: 'Open Sans';
+  src: url("../fonts/opensans/FontFaceKit/Bold/OpenSans-Bold.eot?v=1.1.0");
+  src: url("../fonts/opensans/FontFaceKit/Bold/OpenSans-Bold.eot?#iefix&v=1.1.0") format("embedded-opentype"), url("../fonts/opensans/FontFaceKit/Bold/OpenSans-Bold.woff2?v=1.1.0") format("woff2"), url("../fonts/opensans/FontFaceKit/Bold/OpenSans-Bold.woff?v=1.1.0") format("woff"), url("../fonts/opensans/FontFaceKit/Bold/OpenSans-Bold.ttf?v=1.1.0") format("truetype"), url("../fonts/opensans/FontFaceKit/Bold/OpenSans-Bold.svg?v=1.1.0#Bold") format("svg");
+  font-weight: bold;
+  font-style: normal; }
+/* END Bold */
