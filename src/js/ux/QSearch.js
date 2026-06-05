@@ -137,6 +137,8 @@ ogrid.QSearch = ogrid.Class.extend({
             $("#ogrid-content").removeClass('hide');
         }
 
+        this._input.blur();
+
         //console.log("Quick Search clicked");
         if (this._input.val().trim().length === 0 ) {
             ogrid.Alert.error('No quick search command was entered.');
