@@ -610,9 +610,11 @@ h6 > a {
   padding: 8px 0 0 8px;
 }
 
-/* Summary panel — flex child of #ogrid-map-overlays, centered with 20% side margins */
+/* Summary panel — flex child of #ogrid-map-overlays, centered with 20% side margins.
+   position:relative anchors the absolutely-positioned close button to this box. */
 #ogrid-summary-panel {
   width: 60%;
+  position: relative;
   pointer-events: auto;
   background: #fff;
   border: 2px solid #2e76c4;
@@ -635,12 +637,20 @@ h6 > a {
 }
 
 .ogrid-summary-header {
-  font-size: 10px;
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 1.3px;
   text-transform: uppercase;
   color: #2e76c4;
   margin-bottom: 8px;
+}
+
+@media (max-width: 991px) {
+  .ogrid-summary-header { font-size: 12px; }
+}
+
+@media (max-width: 767px) {
+  .ogrid-summary-header { font-size: 11px; letter-spacing: 0.8px; }
 }
 
 .ogrid-summary-header .fa {
