@@ -164,6 +164,7 @@ datasets:
       ward: "ward"
       zip: null
       police_district: null
+      census_tract: "census_tract"
     proximity:
       name_field: "permit_type"
       limit: 1000

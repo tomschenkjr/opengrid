@@ -1,0 +1,353 @@
+/* =========================================================================
+   OpenGrid redesign — icon-rail sidebar, floating search, left results panel.
+   Loaded after ogrid.css (overrides legacy navbar/footer layout).
+   ========================================================================= */
+
+:root {
+  --rail-w: 72px;
+  --panel-w: 380px;
+  --accent: #1565C0;
+  --accent-soft: #E3F0FB;
+  --ink: #2c3e50;
+  --muted: #6b7785;
+  --line: #e4e8ee;
+}
+
+/* --- Hide legacy chrome (kept in DOM for JS references) ------------------ */
+#ogrid-nav { display: none !important; }
+#ogrid-footer { display: none !important; }
+
+/* Map fills the whole content area; rail + panel float over it */
+#ogrid-content { top: 0 !important; bottom: 0 !important; }
+
+/* Keep Leaflet's top-left controls clear of the rail */
+.leaflet-top.leaflet-left { margin-left: var(--rail-w); transition: margin-left .2s ease; }
+
+/* Drop the plain-language summary below the floating search box.
+   Children stack in a column (summary first, then "Search this area"). */
+#ogrid-map-overlays { top: 88px !important; }
+
+/* Utility control bar — zoom-to-area, zoom-to-results, fullscreen — laid out
+   horizontally just to the LEFT of the lower-right measurement tool. 25px icons. */
+.ogrid-util-bar {
+  position: absolute; right: 46px; bottom: 10px;
+  display: flex; flex-direction: row; align-items: flex-end; gap: 6px;
+}
+.ogrid-util-bar .leaflet-bar { margin: 0 !important; }
+.ogrid-util-bar a,
+.ogrid-util-bar button {
+  width: 25px !important; height: 25px !important; line-height: 25px !important;
+}
+.ogrid-util-bar .fa { font-size: 14px; line-height: 25px; }
+/* Replace the fullscreen sprite (doesn't scale cleanly to 25px) with an FA glyph */
+.ogrid-util-bar .leaflet-control-fullscreen-button { background-image: none !important; }
+.ogrid-util-bar .leaflet-control-fullscreen-button::before {
+  font-family: FontAwesome; content: "\f065"; /* fa-expand */
+  display: block; text-align: center; line-height: 25px; font-size: 14px; color: #333;
+}
+.leaflet-fullscreen-on .ogrid-util-bar .leaflet-control-fullscreen-button::before {
+  content: "\f066"; /* fa-compress */
+}
+
+/* Keep the map legend clear of the bottom-right control stack
+   (locate / zoom / measure) by floating it above them. */
+.leaflet-bottom.leaflet-right .map-info.legend {
+  position: absolute; right: 10px; bottom: 150px; margin: 0;
+}
+
+/* ========================== Icon-rail sidebar =========================== */
+#ogrid-sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0; width: var(--rail-w);
+  background: #fff; border-right: 1px solid var(--line);
+  box-shadow: 2px 0 12px rgba(0,0,0,0.05);
+  z-index: 4000; display: flex; flex-direction: column;
+  transition: transform .25s ease;
+}
+#ogrid-hamburger {
+  border: 0; background: transparent; color: var(--ink);
+  height: 56px; font-size: 20px; cursor: pointer; width: 100%;
+}
+#ogrid-hamburger:hover { color: var(--accent); }
+#ogrid-sidebar .ogrid-nav-items { list-style: none; margin: 8px 0 0; padding: 0; }
+#ogrid-sidebar .ogrid-nav-item a {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 4px; padding: 14px 4px; color: var(--muted); text-decoration: none;
+  font-size: 9px; line-height: 1.15; text-align: center;
+}
+#ogrid-sidebar .ogrid-nav-item a .fa { font-size: 18px; }
+#ogrid-sidebar .ogrid-nav-item a:hover { color: var(--accent); }
+#ogrid-sidebar .ogrid-nav-item.active a { color: var(--accent); }
+#ogrid-sidebar .ogrid-nav-item.active a .fa {
+  background: var(--accent-soft); border-radius: 10px; padding: 8px 14px;
+}
+/* Collapsed (default): icons only, no labels */
+#ogrid-sidebar .ogrid-nav-item a span { display: none; }
+
+/* Expanded: wider rail with text labels beside the icons */
+#ogrid-sidebar.expanded { width: 220px; }
+#ogrid-sidebar.expanded .ogrid-nav-item a {
+  flex-direction: row; justify-content: flex-start; gap: 14px;
+  padding: 14px 20px; font-size: 13px; text-align: left;
+}
+#ogrid-sidebar.expanded .ogrid-nav-item a span { display: inline; }
+
+/* ========================== Floating search ============================= */
+#ogrid-search-float {
+  position: fixed; top: 16px; left: calc(var(--rail-w) + 16px);
+  max-width: calc(100% - var(--rail-w) - 32px);
+  z-index: 3500; transition: left .25s ease;
+  display: flex; align-items: center; gap: 10px;
+}
+/* Search has its own fixed width so the Summarize morph never resizes it */
+#ogrid-search-float #ogrid-search {
+  flex: 0 0 auto; width: 520px !important; margin: 0 !important; min-width: 0;
+  align-self: flex-start;   /* stay at the top so the summary box never pushes it down */
+}
+#ogrid-search-float .ogrid-search-form { margin: 0; }
+#ogrid-search-float #qsearch {
+  position: relative;
+  width: 100%; background: #fff; border-radius: 28px;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.18); padding: 2px 6px;
+  display: flex; align-items: center;
+}
+
+/* --- Summarize: morphs from a button into the plain-language summary box --- */
+/* Dataset chiclets — shown next to the search box when the map has no data.
+   Styled to match the filter chiclets (.ogrid-chiclet > button). */
+#ogrid-dataset-chiclets { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; }
+#ogrid-dataset-chiclets.hide { display: none; }
+/* shared shape */
+.ogrid-ds-chiclet,
+#ogrid-summarize-wrapper .ogrid-summarize-btn {
+  border: 1px solid var(--line); border-radius: 18px; padding: 6px 14px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+/* dataset chiclets: white background, black text */
+.ogrid-ds-chiclet {
+  background: #fff; color: #222; box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  transition: border-color .15s ease, background .15s ease;
+}
+.ogrid-ds-chiclet:hover { border-color: var(--accent); background: #f4f8fc; }
+/* summarize: deeper blue background, white text */
+#ogrid-summarize-wrapper .ogrid-summarize-btn {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+#ogrid-summarize-wrapper .ogrid-summarize-btn:hover { background: #0f4c9a; border-color: #0f4c9a; }
+
+#ogrid-summarize-wrapper {
+  flex: 0 0 auto; align-self: center;
+  background: transparent; border: 0; border-radius: 18px;
+  overflow: hidden; max-width: 170px; max-height: 48px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  transition: max-width .25s ease, max-height .3s ease, background .2s ease, border-color .2s ease;
+}
+#ogrid-summarize-wrapper.hide { display: none; }
+#ogrid-summarize-wrapper .ogrid-summarize-btn { box-shadow: none; }
+#ogrid-summarize-wrapper #ogrid-summary-inline { display: none; }
+
+/* expanded state — grown into the summary box */
+#ogrid-summarize-wrapper.expanded {
+  align-self: flex-start;   /* grow downward when morphed into the summary box */
+  width: 640px; max-width: calc(100vw - var(--rail-w) - 48px); max-height: 42vh;
+  background: #fff; border: 2px solid var(--accent); border-radius: 14px;
+  box-shadow: 0 10px 36px rgba(0,0,0,0.22);
+}
+#ogrid-summarize-wrapper.expanded .ogrid-summarize-btn { display: none; }
+#ogrid-summarize-wrapper.expanded #ogrid-summary-inline {
+  display: block; position: relative; padding: 12px 34px 12px 14px;
+  max-height: 60vh; overflow-y: auto;
+}
+#ogrid-summary-inline .close { position: absolute; top: 6px; right: 10px; }
+#ogrid-search-float #qsearch-input {
+  border: 0; box-shadow: none; background: transparent;
+  height: 48px; font-size: 16px; border-radius: 28px; flex: 1 1 auto;
+}
+#ogrid-search-float #qsearch-input:focus { outline: none; box-shadow: none; }
+#ogrid-search-float .input-group-addon {
+  border: 0; background: transparent; color: var(--muted); cursor: pointer;
+}
+#ogrid-search-float #qsearch-placeholder {
+  position: absolute; left: 22px; right: 56px; top: 50%; transform: translateY(-50%);
+  color: #9aa3ad; font-size: 16px; pointer-events: none;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: opacity .5s ease;
+}
+/* Subtle focus emphasis only — the search box keeps a fixed size */
+#ogrid-search:focus-within #qsearch { box-shadow: 0 10px 36px rgba(0,0,0,0.22); }
+
+/* ============================ Sign in ================================== */
+.ogrid-signin-btn {
+  position: fixed; top: 18px; right: 18px; z-index: 3500;
+  background: #fff; border: 1px solid var(--line); border-radius: 10px;
+  padding: 10px 18px; font-weight: 600; color: var(--ink); cursor: pointer;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+}
+.ogrid-signin-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ========================= Results panel =============================== */
+#ogrid-results-panel, #ogrid-section-placeholder {
+  position: fixed; left: calc(var(--rail-w) + 16px); top: 84px; bottom: 24px; width: var(--panel-w);
+  background: #fff; border-radius: 14px; box-shadow: 0 6px 26px rgba(0,0,0,0.16);
+  z-index: 3000; display: flex; flex-direction: column; overflow: hidden;
+}
+#ogrid-results-panel.hide, #ogrid-section-placeholder.hide { display: none; }
+/* When viewing a non-Search section, the results panel is suppressed */
+#ogrid-container.viewing-section #ogrid-results-panel { display: none !important; }
+
+/* Station detail mode — persistent-station content; no search chrome/filters */
+#ogrid-results-panel.station-mode #ogrid-filter-bar,
+#ogrid-results-panel.station-mode #ogrid-sort-wrapper,
+#ogrid-results-panel.station-mode #ogrid-trend-card { display: none !important; }
+.ogrid-station-detail { font-size: 13px; line-height: 1.6; color: var(--ink); }
+.ogrid-station-detail img,
+.ogrid-station-detail video,
+.ogrid-station-detail iframe { width: 100%; display: block; border-radius: 6px; margin-bottom: 10px; }
+/* Beach weather: most recent reading emphasized, history table below */
+.ogrid-station-detail .bw-history { margin-top: 14px; }
+.ogrid-station-detail .bw-history-title {
+  font-weight: 700; color: var(--muted); font-size: 11px; text-transform: uppercase;
+  letter-spacing: .04em; margin-bottom: 6px;
+}
+.ogrid-station-detail .bw-history table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.ogrid-station-detail .bw-history th {
+  text-align: left; color: var(--muted); font-weight: 600; padding: 4px 6px;
+  border-bottom: 1px solid var(--line);
+}
+.ogrid-station-detail .bw-history td { padding: 4px 6px; border-bottom: 1px solid var(--line); }
+
+/* Collapse / reopen the results panel */
+#ogrid-results-collapse {
+  border: 0; background: transparent; color: var(--muted); cursor: pointer;
+  font-size: 16px; padding: 2px 6px;
+}
+#ogrid-results-collapse:hover { color: var(--accent); }
+#ogrid-results-reopen {
+  display: none; position: fixed; left: calc(var(--rail-w) + 12px); top: 88px;
+  z-index: 3000; background: #fff; border: 1px solid var(--line); border-radius: 10px;
+  padding: 8px 12px; font-weight: 600; color: var(--ink); cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.14);
+}
+#ogrid-results-reopen:hover { border-color: var(--accent); color: var(--accent); }
+#ogrid-container.results-collapsed #ogrid-results-panel { display: none !important; }
+#ogrid-container.results-collapsed #ogrid-results-reopen { display: inline-flex; align-items: center; gap: 6px; }
+/* In a non-Search section the reopen affordance is irrelevant */
+#ogrid-container.viewing-section #ogrid-results-reopen { display: none !important; }
+
+#ogrid-results-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 8px; flex: 0 0 auto;
+}
+#ogrid-results-count { font-size: 15px; color: var(--ink); }
+#ogrid-results-count b { font-size: 20px; }
+#ogrid-results-tools { display: flex; align-items: center; gap: 8px; }
+
+.ogrid-summarize-btn {
+  display: inline-block; background: var(--accent); color: #fff !important;
+  border-radius: 8px; padding: 6px 12px; font-size: 13px; text-decoration: none;
+}
+.ogrid-summarize-btn:hover { background: #0f4c9a; }
+
+#ogrid-sort-wrapper select {
+  border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px;
+  font-size: 13px; color: var(--ink); background: #fff;
+}
+
+/* Trend placeholder card */
+#ogrid-trend-card { padding: 0 16px 6px; flex: 0 0 auto; }
+#ogrid-trend-card .ogrid-trend {
+  border: 1px solid var(--accent); background: var(--accent-soft);
+  border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 16px;
+}
+#ogrid-trend-card .ogrid-trend .big { font-size: 26px; font-weight: 700; color: var(--accent); }
+#ogrid-trend-card .ogrid-trend .lbl { font-size: 11px; color: var(--muted); }
+#ogrid-trend-card .ogrid-trend .delta { font-size: 18px; font-weight: 600; color: #9aa3ad; }
+
+/* Filter chiclet bar */
+#ogrid-filter-bar {
+  display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 16px 10px;
+  border-bottom: 1px solid var(--line); flex: 0 0 auto;
+}
+.ogrid-chiclet { position: relative; }
+.ogrid-chiclet > button {
+  background: var(--accent-soft); border: 1px solid #cfe2f5; color: var(--accent);
+  border-radius: 18px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.ogrid-chiclet > button .caret { margin-left: 2px; }
+.ogrid-chiclet-menu {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 10;
+  background: #fff; border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.16); min-width: 180px; max-height: 280px;
+  overflow-y: auto; padding: 4px; display: none;
+}
+.ogrid-chiclet.open .ogrid-chiclet-menu { display: block; }
+.ogrid-chiclet-menu button {
+  display: block; width: 100%; text-align: left; border: 0; background: transparent;
+  padding: 7px 10px; font-size: 13px; color: var(--ink); border-radius: 6px; cursor: pointer;
+}
+.ogrid-chiclet-menu button:hover { background: var(--accent-soft); }
+.ogrid-chiclet-menu button.selected { color: var(--accent); font-weight: 600; }
+
+/* Results list (scrollable) */
+#ogrid-results-list { flex: 1 1 auto; overflow-y: auto; padding: 10px 16px 16px; }
+.ogrid-result-card {
+  border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px;
+  margin-bottom: 10px; cursor: pointer; transition: box-shadow .15s ease, border-color .15s ease;
+  border-left-width: 4px;
+}
+.ogrid-result-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.1); border-color: #cfd6df; }
+.ogrid-result-card .rc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.ogrid-result-card .rc-top-right { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.ogrid-result-card .rc-title { font-weight: 700; color: var(--ink); font-size: 14px; }
+.ogrid-result-card .rc-pill {
+  font-size: 11px; border-radius: 12px; padding: 2px 9px; white-space: nowrap;
+  border: 1px solid var(--accent); color: var(--accent);
+}
+.ogrid-result-card .rc-sub { color: var(--muted); font-size: 12px; margin-top: 6px; }
+
+/* Expand/collapse details */
+.ogrid-result-card .rc-toggle {
+  border: 0; background: transparent; color: var(--muted); cursor: pointer;
+  padding: 0 2px; font-size: 13px; line-height: 1; transition: transform .15s ease;
+}
+.ogrid-result-card.expanded .rc-toggle { transform: rotate(180deg); color: var(--accent); }
+.ogrid-result-card .rc-details { display: none; margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+.ogrid-result-card.expanded .rc-details { display: block; }
+/* brief highlight when selected from a map point click */
+.ogrid-result-card.rc-flash { animation: ogrid-rc-flash 1.4s ease; }
+@keyframes ogrid-rc-flash {
+  0% { background: var(--accent-soft); border-color: var(--accent); }
+  100% { background: #fff; }
+}
+.ogrid-result-card .rc-row {
+  display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; font-size: 12px;
+}
+.ogrid-result-card .rc-row .rc-k { color: var(--muted); font-weight: 600; flex: 0 0 auto; }
+.ogrid-result-card .rc-row .rc-v { color: var(--ink); text-align: right; word-break: break-word; }
+.ogrid-empty { color: var(--muted); text-align: center; padding: 30px 10px; }
+
+/* Section placeholder (Place Profile / Trends / Announcements) */
+#ogrid-section-placeholder {
+  align-items: center; justify-content: center; text-align: center; padding: 30px;
+}
+#ogrid-section-placeholder .ph-icon { font-size: 40px; color: var(--accent); margin-bottom: 14px; }
+#ogrid-section-placeholder .ph-title { font-size: 18px; font-weight: 700; color: var(--ink); }
+#ogrid-section-placeholder .ph-sub { color: var(--muted); margin-top: 8px; }
+
+/* ============================ Responsive =============================== */
+@media (max-width: 991px) {
+  :root { --rail-w: 56px; --panel-w: 320px; }
+  #ogrid-search-float #ogrid-search { width: 420px !important; }
+}
+@media (max-width: 767px) {
+  :root { --rail-w: 48px; }
+  #ogrid-results-panel, #ogrid-section-placeholder {
+    left: var(--rail-w); right: 0; width: auto; top: 76px; bottom: 0; border-radius: 0;
+  }
+  #ogrid-search-float {
+    left: calc(var(--rail-w) + 8px); right: 8px; width: auto; max-width: none;
+  }
+  #ogrid-search-float #ogrid-search { flex: 1 1 auto; width: auto !important; }
+  .ogrid-signin-btn { padding: 8px 12px; font-size: 13px; }
+}

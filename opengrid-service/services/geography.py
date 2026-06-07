@@ -119,6 +119,9 @@ _ward_polygons: dict[int, str] = {}
 _community_geojson: dict[int, dict] = {}
 _ward_geojson: dict[int, dict] = {}
 
+# Census tract geometry cache: 6-digit tractce10 string → GeoJSON geometry
+_tract_geojson: dict[str, dict] = {}
+
 
 def resolve_community_area(name: str) -> tuple[int | None, str | None]:
     """
@@ -147,6 +150,29 @@ def get_ward_polygon(ward: int) -> str | None:
 def get_community_area_geojson(number: int) -> dict | None:
     """Return raw GeoJSON geometry for a community area, for client-side boundary display."""
     return _community_geojson.get(number)
+
+
+def all_community_area_geojson() -> dict[int, dict]:
+    """Return the full {area number → GeoJSON geometry} cache (for choropleths)."""
+    return _community_geojson
+
+
+def get_tract_geojson(tractce10: str) -> dict | None:
+    """Return GeoJSON geometry for a census tract (6-digit tractce10)."""
+    return _tract_geojson.get(tractce10)
+
+
+def all_tract_geojson() -> dict[str, dict]:
+    """Return the full {tractce10 → GeoJSON geometry} cache (for tract choropleths)."""
+    return _tract_geojson
+
+
+_NUMBER_TO_NAME = {num: name for name, num in COMMUNITY_AREAS.items()}
+
+
+def community_area_name(number: int) -> str | None:
+    """Official community area name for a number (reverse of COMMUNITY_AREAS)."""
+    return _NUMBER_TO_NAME.get(number)
 
 
 def get_ward_geojson(ward: int) -> dict | None:
@@ -301,7 +327,42 @@ async def _fetch_ward_polygons():
         print(f"Geography: failed to fetch ward polygons: {e}")
 
 
+async def _fetch_tract_polygons():
+    """Fetch census tract boundary polygons from Socrata (keyed by 6-digit tractce10)."""
+    global _tract_geojson
+    app_token = os.getenv("SOCRATA_APP_TOKEN", "").strip() or None
+    headers = {"User-Agent": "opengrid-service/1.0"}
+    if app_token:
+        headers["X-App-Token"] = app_token
+
+    try:
+        async with httpx.AsyncClient(headers=headers, timeout=60) as http:
+            r = await http.get(
+                "https://data.cityofchicago.org/resource/74p9-q2aq.json",
+                params={"$select": "tractce10,the_geom", "$limit": 2000},
+            )
+            r.raise_for_status()
+            rows = r.json()
+
+        for row in rows:
+            try:
+                tractce = (row.get("tractce10") or "").zfill(6)
+                geom_raw = row.get("the_geom")
+                if not geom_raw or not tractce.strip("0"):
+                    continue
+                if isinstance(geom_raw, str):
+                    geom_raw = json.loads(geom_raw)
+                _tract_geojson[tractce] = geom_raw
+            except (ValueError, json.JSONDecodeError, TypeError):
+                continue
+
+        print(f"Geography: cached {len(_tract_geojson)} census tract polygons")
+    except Exception as e:
+        print(f"Geography: failed to fetch census tract polygons: {e}")
+
+
 async def initialize():
     """Fetch and cache all boundary polygons at service startup."""
     await _fetch_community_area_polygons()
     await _fetch_ward_polygons()
+    await _fetch_tract_polygons()

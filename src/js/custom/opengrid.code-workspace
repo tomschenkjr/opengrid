@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../../.."
+		},
+		{
+			"path": "../../../../chicago-data-mcp"
+		},
+		{
+			"path": "../../../../mcp-aws-infra"
+		}
+	],
+	"settings": {}
+}

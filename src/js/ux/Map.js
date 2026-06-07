@@ -44,6 +44,11 @@ ogrid.Map = ogrid.Class.extend({
 
         this._map = L.map(this._mapContainer.attr('id'), this._options.mapLibraryOptions);
 
+        //remove the default zoom in/out control
+        if (this._map.zoomControl) {
+            this._map.zoomControl.remove();
+        }
+
         //subscribe to applicable opengrid client events
         ogrid.Event.on(ogrid.Event.types.REFRESH_DATA, $.proxy(this._onRefreshData, this));
         ogrid.Event.on(ogrid.Event.types.CLEAR, $.proxy(this._onClear, this));
@@ -188,43 +193,22 @@ ogrid.Map = ogrid.Class.extend({
     _addVariousControls: function() {
         var me = this;
 
-        //group 2 related easy butons
-        L.easyBar([
-            L.easyButton('fa-home fa-lg', function(btn, map){
-                me._resetZoom();
-            }, 'Reset map view'),
+        // "Zoom to include all query results" (the home/Reset-view button is removed)
+        var zoomResultsBtn = L.easyButton('fa-dot-circle-o', function(btn, map){
+            me.zoomToResultBounds();
+        }, 'Zoom to include all query results');
+        zoomResultsBtn.addTo(this._map);
 
-            L.easyButton('fa-dot-circle-o fa-lg', function(btn, map){
-                me.zoomToResultBounds();
-            }, 'Zoom to include all query results')
-        ]).addTo(this._map);
-
-
-        //Zoom Home
-        //var zoomHome = L.Control.zoomHome();
-        //zoomHome.addTo(this._map);
-
+        // "Zoom to specific area"
         var zoomBoxCtl = L.control.zoomBox({
-            modal: true,  // If false (default), it deactivates after each use.
-                          // If true, zoomBox control stays active until you click on the control to deactivate.
-            position: "topleft"
+            modal: true   // stays active until clicked off
         });
         this._map.addControl(zoomBoxCtl);
 
         //Full Screen
-        L.control.fullscreen().addTo(this._map);
+        var fullscreenCtl = L.control.fullscreen();
+        fullscreenCtl.addTo(this._map);
 
-        //measuring tools
-        this._measureTool = L.control.measure(ogrid.Config.map.measureOptions);
-        this._measureTool.addTo(this._map);
-
-        this._locateControl =  L.control.locate();
-        this._locateControl.options.strings.title = 'Show current location';
-
-        //we have to do this explicitly now bause the default icon changed and it's causing a dup icon on our toolbar
-        this._locateControl.options.icon = 'fa fa-location-arrow';
-        this._locateControl.addTo(this._map);
-		
 		 //create legend
         this._legend = L.control({position: 'bottomright'});
 
@@ -234,6 +218,33 @@ ogrid.Map = ogrid.Class.extend({
             return div;
         };
         this._legend.addTo(this._map);
+
+        // Lower-right control stack. Leaflet PREPENDS each control added to a
+        // bottom corner, so add order is bottom → top. Adding measure, then
+        // zoom, then locate yields this top → bottom order:
+        //   locate (show your location)  /  zoom (+ / −)  /  measure tool
+        this._measureTool = L.control.measure(
+            $.extend({}, ogrid.Config.map.measureOptions, { position: 'bottomright' })
+        );
+        this._measureTool.addTo(this._map);
+
+        L.control.zoom({ position: 'bottomright' }).addTo(this._map);
+
+        this._locateControl = L.control.locate({ position: 'bottomright' });
+        this._locateControl.options.strings.title = 'Show current location';
+        //set explicitly: the default locate icon changed and caused a dup icon
+        this._locateControl.options.icon = 'fa fa-location-arrow';
+        this._locateControl.addTo(this._map);
+
+        // Horizontal utility bar to the LEFT of the measure tool:
+        // zoom-to-specific-area, zoom-to-results, fullscreen (25px icons via CSS)
+        var utilBar = L.control({ position: 'bottomright' });
+        utilBar.onAdd = function() { return L.DomUtil.create('div', 'ogrid-util-bar'); };
+        utilBar.addTo(this._map);
+        var u = utilBar.getContainer();
+        u.appendChild(zoomBoxCtl.getContainer());
+        u.appendChild(zoomResultsBtn.getContainer());
+        u.appendChild(fullscreenCtl.getContainer());
 
     },
 	
@@ -522,6 +533,14 @@ ogrid.Map = ogrid.Class.extend({
                             //automatically open the popup
                             me._map.openPopup(pop);
                         }
+
+                        //clicking a result point also selects its card in the results panel
+                        layer.on('click', function() {
+                            ogrid.Event.raise(ogrid.Event.types.FEATURE_SELECTED, {
+                                resultSetId: rsId,
+                                featureId: ogrid.oid(feature)
+                            });
+                        });
                     },
 
                     className: 'layer-opengrid',
@@ -947,6 +966,27 @@ ogrid.Map = ogrid.Class.extend({
             this._map.setView(this._markers[rsId][pointId].getLatLng());
             this._markers[rsId][pointId].openPopup();
         }
+    },
+
+    //temporarily remove query-result layers from the map (MapMode zoom swap)
+    //and return them so the caller can restore them later. Does not touch the
+    //results panel/cards.
+    hideQueryResultLayers: function() {
+        var me = this, hidden = [];
+        this._map.eachLayer(function(layer) {
+            if (layer.isOpenGridQueryResults && me._map.hasLayer(layer)) {
+                hidden.push(layer);
+                me._map.removeLayer(layer);
+            }
+        });
+        return hidden;
+    },
+
+    showLayers: function(layers) {
+        var me = this;
+        (layers || []).forEach(function(layer) {
+            if (!me._map.hasLayer(layer)) { layer.addTo(me._map); }
+        });
     },
 
     //Added auto zoom in search result set bounds control

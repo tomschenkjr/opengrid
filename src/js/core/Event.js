@@ -16,7 +16,8 @@ ogrid.Event = {
         LOGGED_OUT: 'logged_out',
         MOBILE_MODE_CHANGED: 'mobile_mode_changed',
         MAP_EXTENT_CHANGED: 'map_extent_changed',
-        ADVANCED_INIT_DONE: 'advanced_init_done'
+        ADVANCED_INIT_DONE: 'advanced_init_done',
+        FEATURE_SELECTED: 'feature_selected'
     }
 };
 

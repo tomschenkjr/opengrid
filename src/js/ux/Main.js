@@ -188,6 +188,16 @@ ogrid.Main = ogrid.Class.extend({
                         {datasets: me._datasets}
                     );
 
+                    //redesign: icon-rail sidebar + filter chiclets
+                    me._sidebar = new ogrid.Sidebar();
+                    me._filterBar = new ogrid.FilterBar({datasets: me._datasets});
+                    me._dsChiclets = new ogrid.DatasetChiclets({datasets: me._datasets, map: me._map});
+
+                    //top-right Clear Data button → reuse legacy clear command
+                    $('#ogrid-clear-data-btn').on('click', function() {
+                        $('#ogrid-clear-btn').click();
+                    });
+
                     //nav menu tweaks
                     me._setNavBarBehavior();
 
@@ -242,10 +252,16 @@ ogrid.Main = ogrid.Class.extend({
             this._mapInit.resolve();
 
             //init other map dependent objects
-            //init table view
+            //init table view (kept for compatibility; hidden in the redesign)
             this._tv = new ogrid.TableView($('#tableview'), $('#ogrid-nav-tabs'), $('#ogrid-tab-content'),
                 {map: this._map}
             );
+
+            //redesign: left results panel (consumes REFRESH_DATA like TableView)
+            this._rp = new ogrid.ResultsPanel({map: this._map});
+
+            //scale-aware rendering: choropleth when zoomed out, points when zoomed in
+            this._mapMode = new ogrid.MapMode({map: this._map});
 
         } catch (e) {
             console.log("Resolving _mapInit in error");

@@ -1,0 +1,52 @@
+providers:
+  - id: noaa-weather
+    type: mcp_http
+    base_url: https://weather-mcp.tomschenkjr.net
+    description: "NOAA weather forecasts and alerts for the Chicago area"
+    geometry:
+      strategy: nws_zone
+      zone_prefix: forecast
+      default_zone: "ILZ104"   # Chicago / Cook County forecast zone
+    display:
+      color: "#5588CC"
+      fillColor: "#AACCEE"
+      opacity: 50
+    tools:
+      - name: get_forecast
+        description: "7-day weather forecast for a lat/lon location"
+        inputs:
+          latitude: {type: number, description: "Decimal latitude"}
+          longitude: {type: number, description: "Decimal longitude"}
+      - name: get_alerts
+        description: "Active NWS weather alerts and warnings for Chicago"
+        inputs: {}
+      - name: get_hourly_forecast
+        description: "Hour-by-hour forecast for the next 48 hours"
+        inputs:
+          latitude: {type: number}
+          longitude: {type: number}
+
+  - id: noaa-marine
+    type: mcp_http
+    base_url: https://marine-mcp.tomschenkjr.net
+    description: "Lake Michigan marine conditions, buoy data, and nearshore forecasts"
+    geometry:
+      strategy: nws_zone
+      zone_prefix: marine
+      default_zone: "LMZ742"   # Chicago nearshore Lake Michigan zone
+      # Combined Chicago shoreline nearshore zones (rendered as one shape)
+      zones: ["LMZ740", "LMZ741", "LMZ742"]
+    display:
+      color: "#006699"
+      fillColor: "#66AACC"
+      opacity: 50
+    tools:
+      - name: get_nearshore_forecast
+        description: "Lake Michigan nearshore wind, wave height, and temperature conditions"
+        inputs: {}
+      - name: get_marine_alerts
+        description: "Active marine alerts and warnings for Lake Michigan"
+        inputs: {}
+      - name: get_buoy_observations
+        description: "Current sensor readings from NOAA buoys on Lake Michigan"
+        inputs: {}

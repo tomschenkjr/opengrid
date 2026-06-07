@@ -11,15 +11,23 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-from routers import auth, datasets, queries, capabilities, search, summarize
+from routers import auth, datasets, queries, capabilities, search, summarize, stations, geography as geography_router, map as map_router
 from services.ai_search import initialize as ai_initialize
-from services import geography
+from services import geography, provider_registry, zone_resolver
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await geography.initialize()  # fetch community area + ward boundary polygons
-    await ai_initialize()          # fetch crime types, warm schema prompt
+    await geography.initialize()      # fetch community area + ward boundary polygons
+    await ai_initialize()              # fetch crime types, warm schema prompt
+    provider_registry.load()           # register MCP providers from config/providers.yaml
+    warm = []
+    for p in provider_registry.all_providers():
+        geo = p._config.get("geometry", {})
+        if geo.get("default_zone"):
+            warm.append(geo["default_zone"])
+        warm.extend(geo.get("zones", []))   # combined marine shoreline zones
+    await zone_resolver.warm_zones(list(dict.fromkeys(warm)))  # pre-fetch NWS zone boundaries
     yield
 
 
@@ -45,6 +53,9 @@ app.include_router(queries.router, prefix=PREFIX)
 app.include_router(capabilities.router, prefix=PREFIX)
 app.include_router(search.router, prefix=PREFIX)
 app.include_router(summarize.router, prefix=PREFIX)
+app.include_router(stations.router, prefix=PREFIX)
+app.include_router(geography_router.router, prefix=PREFIX)
+app.include_router(map_router.router, prefix=PREFIX)
 
 
 @app.get("/health")

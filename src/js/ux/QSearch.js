@@ -59,7 +59,8 @@ ogrid.QSearch = ogrid.Class.extend({
 
         $('#ogrid-summarize-btn').on('click', $.proxy(this._onSummarize, this));
         $('#ogrid-summary-close').on('click', function() {
-            $('#ogrid-summary-panel').addClass('hide');
+            //collapse the box back into the Summarize button
+            $('#ogrid-summarize-wrapper').removeClass('expanded');
         });
 
     },
@@ -131,8 +132,7 @@ ogrid.QSearch = ogrid.Class.extend({
         this._lastResults = null;
         this._lastQuery = '';
         $('#ogrid-search-again').hide();
-        $('#ogrid-summarize-wrapper').addClass('hide');
-        $('#ogrid-summary-panel').addClass('hide');
+        $('#ogrid-summarize-wrapper').addClass('hide').removeClass('expanded');
         try {
             //avoid annoying keyboard popup when on mobile mode
             if (!ogrid.App.mobileView()) this._input.focus();
@@ -249,8 +249,10 @@ ogrid.QSearch = ogrid.Class.extend({
 
             me._lastResults = results;
             me._lastQuery = me._input.val();
-            $('#ogrid-summarize-wrapper').removeClass('hide');
-            $('#ogrid-summary-panel').addClass('hide');
+            $('#ogrid-summarize-wrapper').removeClass('hide').removeClass('expanded');
+            if (results.intent === 'analytical') {
+                setTimeout(function() { me._onSummarize(); }, 300);
+            }
             me._watchMapForSearchAgain();
             return;
         }
@@ -348,8 +350,10 @@ ogrid.QSearch = ogrid.Class.extend({
         // Store results and reveal the Summarize button
         this._lastResults = results;
         this._lastQuery = this._input.val();
-        $('#ogrid-summarize-wrapper').removeClass('hide');
-        $('#ogrid-summary-panel').addClass('hide');
+        $('#ogrid-summarize-wrapper').removeClass('hide').removeClass('expanded');
+        if (results.intent === 'analytical') {
+            setTimeout(function() { me._onSummarize(); }, 300);
+        }
 
         // Defer the "Search this area" watcher until after any auto-zoom animation
         if (didFitBounds) {
@@ -398,7 +402,8 @@ ogrid.QSearch = ogrid.Class.extend({
         var url = endpoint.replace(/\/rest\/?$/, '') + '/rest/search/summarize';
 
         $('#ogrid-summary-text').html('<span class="ogrid-summary-loading">Generating summary…</span>');
-        $('#ogrid-summary-panel').removeClass('hide');
+        //morph the Summarize button into the summary box
+        $('#ogrid-summarize-wrapper').addClass('expanded');
 
         $.ajax({
             url: url,
