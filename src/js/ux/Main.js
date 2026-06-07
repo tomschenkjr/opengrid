@@ -261,7 +261,8 @@ ogrid.Main = ogrid.Class.extend({
             this._rp = new ogrid.ResultsPanel({map: this._map});
 
             //scale-aware rendering: choropleth when zoomed out, points when zoomed in
-            this._mapMode = new ogrid.MapMode({map: this._map});
+            //DISABLED for now — undo the choropleth/heatmap zoom-swap effect (issue #6)
+            //this._mapMode = new ogrid.MapMode({map: this._map});
 
         } catch (e) {
             console.log("Resolving _mapInit in error");
