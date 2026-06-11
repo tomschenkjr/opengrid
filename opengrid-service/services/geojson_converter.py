@@ -38,22 +38,7 @@ def _row_to_feature(row: dict, lat_field: str, lon_field: str, raw_row: dict = N
     """Convert a single Socrata row to a GeoJSON Feature.
     row: filtered properties to include; raw_row: full row used for coordinate extraction."""
     src = raw_row if raw_row is not None else row
-    lat = src.get(lat_field)
-    lon = src.get(lon_field)
-
-    # Socrata sometimes nests coordinates in a "location" object
-    if (lat is None or lon is None) and "location" in src:
-        loc = src["location"]
-        if isinstance(loc, dict):
-            lat = loc.get("latitude") or loc.get("lat")
-            lon = loc.get("longitude") or loc.get("lon")
-        elif isinstance(loc, str):
-            try:
-                parsed = json.loads(loc)
-                lat = parsed.get("latitude")
-                lon = parsed.get("longitude")
-            except (json.JSONDecodeError, AttributeError):
-                pass
+    lat, lon = _extract_lat_lon(src, lat_field, lon_field)
 
     if lat is None or lon is None:
         return None
@@ -80,6 +65,29 @@ def _row_to_feature(row: dict, lat_field: str, lon_field: str, raw_row: dict = N
         },
         "properties": properties,
     }
+
+
+def _extract_lat_lon(src: dict, lat_field: str, lon_field: str) -> tuple[object | None, object | None]:
+    lat = src.get(lat_field)
+    lon = src.get(lon_field)
+
+    # Socrata sometimes nests coordinates in a "location" object.
+    if (lat is None or lon is None) and "location" in src:
+        loc = src["location"]
+        if isinstance(loc, str):
+            try:
+                loc = json.loads(loc)
+            except (json.JSONDecodeError, AttributeError):
+                loc = None
+        if isinstance(loc, dict):
+            lat = loc.get("latitude") or loc.get("lat")
+            lon = loc.get("longitude") or loc.get("lon")
+            coords = loc.get("coordinates")
+            if (lat is None or lon is None) and isinstance(coords, list) and len(coords) >= 2:
+                lon = coords[0]
+                lat = coords[1]
+
+    return lat, lon
 
 
 def _build_view(descriptor: dict) -> dict:

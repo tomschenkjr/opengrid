@@ -62,8 +62,44 @@ ogrid.Main = ogrid.Class.extend({
     _initRoutes: function() {
         var me = this;
 
+        crossroads.addRoute(new RegExp('^\/?$'), function() {
+            console.log('Route matched default map page');
+            me._showAppPage('search');
+        });
+
+        crossroads.addRoute(new RegExp('^\/?map\/?$'), function() {
+            console.log('Route matched map page');
+            me._showAppPage('search');
+        });
+
+        crossroads.addRoute(new RegExp('^\/?search\/?$'), function() {
+            console.log('Route matched legacy search page');
+            me._showAppPage('search');
+        });
+
+        crossroads.addRoute(new RegExp('^\/?community-trends\/?$'), function() {
+            console.log('Route matched community trends page');
+            me._showAppPage('trends');
+        });
+
+        crossroads.addRoute(new RegExp('^\/?community-trends\/([0-9]+)\/?$'), function(areaNumber) {
+            console.log('Route matched community trends profile page');
+            me._showAppPage('trends', { communityArea: parseInt(areaNumber, 10) });
+        });
+
+        crossroads.addRoute(new RegExp('^\/?place-profile\/?$'), function() {
+            console.log('Route matched place profile page');
+            me._showAppPage('place');
+        });
+
+        crossroads.addRoute(new RegExp('^\/?announcements\/?$'), function() {
+            console.log('Route matched announcements page');
+            me._showAppPage('announce');
+        });
+
         crossroads.addRoute(new RegExp('^\/?query\?(.+)\/?$'), function(query) {
             console.log('Route matched query resource');
+            me._showAppPage('search');
 
             //parse query params
             var re = /(\?|&)([^=]+)=([^&]+)/img;
@@ -92,6 +128,11 @@ ogrid.Main = ogrid.Class.extend({
 
         hasher.initialized.add(function(h) {
             console.log('hasher init: "' + h + '"');
+            if (!h) {
+                hasher.replaceHash('/map');
+                me._showAppPage('search');
+                return;
+            }
             crossroads.parse(h);
         });
 
@@ -100,6 +141,39 @@ ogrid.Main = ogrid.Class.extend({
             crossroads.parse(h);
         });
         hasher.init();
+    },
+
+    _showAppPage: function(section, options) {
+        if (this._sidebar && this._sidebar.showSection) {
+            this._sidebar.showSection(section, options || {});
+        }
+    },
+
+    _pageRoute: function(section, options) {
+        var routes = {
+            search: '/map',
+            trends: '/community-trends',
+            place: '/place-profile',
+            announce: '/announcements'
+        };
+        var route = routes[section] || routes.search;
+        if (section === 'trends' && options && options.communityArea) {
+            route += '/' + encodeURIComponent(options.communityArea);
+        }
+        return route;
+    },
+
+    navigateToPage: function(section, options) {
+        var route = this._pageRoute(section, options);
+        if (typeof hasher !== 'undefined') {
+            if (hasher.getHash() === route) {
+                this._showAppPage(section, options || {});
+            } else {
+                hasher.setHash(route);
+            }
+        } else {
+            window.location.hash = '#' + route;
+        }
     },
 
 

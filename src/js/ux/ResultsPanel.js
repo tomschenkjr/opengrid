@@ -122,7 +122,9 @@ ogrid.ResultsPanel = ogrid.Class.extend({
 
     _showPanel: function() {
         $('#ogrid-results-panel').removeClass('hide').removeClass('station-mode');
-        $('#ogrid-container').removeClass('viewing-section').removeClass('results-collapsed');
+        $('#ogrid-container')
+            .removeClass('viewing-section viewing-community-trends')
+            .removeClass('results-collapsed');
         $('#ogrid-section-placeholder').addClass('hide');
         $('#ogrid-sidebar .ogrid-nav-item').removeClass('active').filter('[data-section="search"]').addClass('active');
     },
@@ -136,6 +138,10 @@ ogrid.ResultsPanel = ogrid.Class.extend({
             if (!roles.date && c.dataType === 'date') roles.date = c;
             if (!roles.status && statusIds.indexOf(c.id) !== -1) roles.status = c;
             if (!roles.addr && addrIds.indexOf(c.id) !== -1) roles.addr = c;
+        });
+        $.each(cols, function(i, c) {
+            if (roles.title) return;
+            if (c.id === 'project_name' && (c.list || c.popup)) roles.title = c;
         });
         $.each(cols, function(i, c) {
             if (roles.title) return;
@@ -333,7 +339,9 @@ ogrid.ResultsPanel = ogrid.Class.extend({
     showStationContent: function(opts) {
         opts = opts || {};
         this._mode = 'features';
-        $('#ogrid-container').removeClass('results-collapsed').removeClass('viewing-section');
+        $('#ogrid-container')
+            .removeClass('results-collapsed')
+            .removeClass('viewing-section viewing-community-trends');
         $('#ogrid-results-panel').removeClass('hide').addClass('station-mode');
         $('#ogrid-sidebar .ogrid-nav-item').removeClass('active').filter('[data-section="search"]').addClass('active');
         $('#ogrid-summarize-wrapper').addClass('hide').removeClass('expanded');
@@ -346,7 +354,9 @@ ogrid.ResultsPanel = ogrid.Class.extend({
     _onFeatureSelected: function(evt) {
         var msg = evt.message || {};
         if (msg.resultSetId == null || msg.featureId == null) return;
-        $('#ogrid-container').removeClass('results-collapsed').removeClass('viewing-section');
+        $('#ogrid-container')
+            .removeClass('results-collapsed')
+            .removeClass('viewing-section viewing-community-trends');
         $('#ogrid-results-panel').removeClass('hide');
         var $cards = $('#ogrid-results-list .ogrid-result-card');
         var $match = $cards.filter(function() {

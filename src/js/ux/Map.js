@@ -246,6 +246,9 @@ ogrid.Map = ogrid.Class.extend({
         u.appendChild(zoomResultsBtn.getContainer());
         u.appendChild(fullscreenCtl.getContainer());
 
+        // Community Trends: toggleable clickable community-area name labels
+        this._caLabels = new ogrid.CommunityAreaLabels({ map: this._map });
+
     },
 	
 	
@@ -463,7 +466,9 @@ ogrid.Map = ogrid.Class.extend({
                                 color:       o.color || '#0066CC',
                                 weight:      o.borderWidth || 3,
                                 opacity:     ((o.opacity || 90) / 100),
-                                fill:        false
+                                fill:        o.fill === true,
+                                fillColor:   o.fillColor || o.color || '#0066CC',
+                                fillOpacity: ((o.opacity || 90) / 100)
                             };
                         }
                     },
@@ -621,8 +626,31 @@ ogrid.Map = ogrid.Class.extend({
        }
     },
 
+    _streetViewLatLng: function(feature) {
+        if (feature && feature.geometry && feature.geometry.type === 'Point' &&
+            feature.geometry.coordinates && feature.geometry.coordinates.length >= 2) {
+            return {
+                lat: feature.geometry.coordinates[1],
+                lon: feature.geometry.coordinates[0]
+            };
+        }
+
+        var props = (feature && feature.properties) || {};
+        var lat = props.lat || props.latitude || props.school_latitude;
+        var lon = props.lon || props.lng || props.long || props.longitude || props.school_longitude;
+        if (lat != null && lon != null) {
+            return { lat: lat, lon: lon };
+        }
+        return null;
+    },
+
     _popupText: function (feature, view) {
         var txt ="";
+        var fields = "";
+        var sv = this._streetViewLatLng(feature);
+        if (sv && ogrid.StreetView) {
+            txt += ogrid.StreetView.imageHtml(sv);
+        }
         //iterate through geojson feature properties
         for (var p in feature.properties) {
             if (feature.properties.hasOwnProperty(p)) {
@@ -633,11 +661,14 @@ ogrid.Map = ogrid.Class.extend({
                     if (m.dataType !== 'graphic') {
                         //graphic data types will be rendered differently on popup later
                         //other types to be supported later are link, etc.
-                        txt += '<b>' + m.displayName + ': </b>';
-                        txt += this._linkify(feature.properties[p]) + '<br />';
+                        fields += '<b>' + m.displayName + ': </b>';
+                        fields += this._linkify(feature.properties[p]) + '<br />';
                     }
                 }
             }
+        }
+        if (fields) {
+            txt += '<div class="ogrid-popup-fields">' + fields + '</div>';
         }
         return txt;
     },

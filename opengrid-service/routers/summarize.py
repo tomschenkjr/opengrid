@@ -9,6 +9,8 @@ highlight in the UI.
 import json
 import re
 import traceback
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from anthropic import Anthropic
@@ -24,14 +26,89 @@ class SummarizeRequest(BaseModel):
     sample_records: list[dict]
 
 
+_CHICAGO_TZ = ZoneInfo("America/Chicago")
+
+
+def _today_label() -> str:
+    return datetime.now(_CHICAGO_TZ).strftime("%A, %B %-d, %Y")
+
+
+def _marine_payload(rec: dict) -> dict:
+    raw = rec.get("marine_raw_payload")
+    if raw:
+        try:
+            data = json.loads(raw)
+            if isinstance(data, dict):
+                return data
+        except (TypeError, json.JSONDecodeError):
+            pass
+    return {
+        "headline": rec.get("summary"),
+        "risk_level": rec.get("risk_level"),
+        "zone_id": rec.get("zone_id"),
+        "alerts_first": {
+            "message": rec.get("marine_alert_summary"),
+            "formatted": rec.get("alerts"),
+        },
+        "marine_forecast_baseline": {
+            "wind_kt": {"text": rec.get("forecast_wind")},
+            "waves_ft": {"text": rec.get("forecast_waves")},
+        },
+        "wind_assessment": {"category": rec.get("wind_category")},
+        "wave_assessment": {"category": rec.get("wave_category")},
+        "cautions": rec.get("cautions"),
+        "llm_briefing_context": rec.get("marine_summary_context"),
+        "observations": {
+            k: v for k, v in rec.items()
+            if k.startswith("obs_") and v not in (None, "")
+        },
+    }
+
+
 def _is_forecast_data(sample: list[dict]) -> bool:
-    """Detect marine/weather forecast records by presence of a 'conditions' field."""
-    return bool(sample and sample[0].get("conditions"))
+    """Detect marine/weather forecast records from raw or structured provider data."""
+    if not sample:
+        return False
+    rec = sample[0]
+    return bool(
+        rec.get("conditions")
+        or rec.get("marine_raw_payload")
+        or rec.get("marine_summary_context")
+        or (
+            rec.get("title") == "Lake Conditions"
+            and (rec.get("risk_level") or rec.get("forecast_wind") or rec.get("forecast_waves"))
+        )
+    )
 
 
 def _build_forecast_prompt(query: str, dataset_name: str, sample: list[dict]) -> str:
-    conditions_text = sample[0].get("conditions", "No forecast data available")
-    return f"""Summarize this marine or weather forecast in a single plain-English sentence.
+    rec = sample[0] if sample else {}
+    if rec.get("marine_raw_payload") or rec.get("marine_summary_context") or rec.get("title") == "Lake Conditions":
+        marine_payload = _marine_payload(rec)
+        payload_text = json.dumps(marine_payload, separators=(",", ":"))
+        return f"""Write a plain-English Chicago sailing briefing from this Chicago Marine Knowledge response.
+
+Query: "{query}"
+Source: {dataset_name}
+Today in Chicago: {_today_label()}
+Marine context JSON:
+{payload_text}
+
+Rules:
+- Write 3-5 short sentences, no more than 130 words total
+- Answer the user's time period first. If they ask about "today", describe today/late afternoon before tonight or tomorrow.
+- Read alert/advisory timing carefully. If an advisory starts tomorrow or later, do not say conditions are unsafe today because of it; call it out as a future period to avoid.
+- If an advisory is in effect during the requested period, name it and explain the practical impact for sailors or boaters.
+- Include concrete wind and wave details from the NOAA forecast and one important current observation when available.
+- Mention thunderstorms, source limitations, or stale readings only if they materially affect the sailing decision.
+- Do not invent alert timing, wind, waves, or observations. Do not flatten different days into one go/no-go answer.
+
+Respond with JSON only — no markdown, no explanation:
+{{"summary": "...", "highlights": ["phrase1", "phrase2", "phrase3"]}}
+highlights = 3-5 key phrases worth visual emphasis, such as today's wind, waves, future advisory period, storm risk, or important observations."""
+
+    conditions_text = rec.get("conditions", "No forecast data available")
+    return f"""Summarize this marine or weather forecast in 2-3 short plain-English sentences.
 
 Query: "{query}"
 Source: {dataset_name}
@@ -39,15 +116,15 @@ Forecast:
 {conditions_text}
 
 Rules:
-- One sentence only (two short clauses at most)
+- No more than 90 words total
 - Lead with the most important condition: wind speed/direction, wave height, or any active advisory
 - Include specifics where present: knots, feet, visibility, temperature
-- Note warnings or advisories if any are active
+- If warnings or advisories are active, name them and explain the practical boating impact
 - Write for a sailor or boater deciding whether to go out on Lake Michigan
 
 Respond with JSON only — no markdown, no explanation:
 {{"summary": "...", "highlights": ["phrase1", "phrase2", "phrase3"]}}
-highlights = 2-4 key conditions worth visual emphasis (wind speed, wave height, alert types, temperatures)."""
+highlights = 3-5 key conditions worth visual emphasis (wind speed, wave height, alert types, temperatures)."""
 
 
 def _build_tabular_prompt(query: str, dataset_name: str, total_count: int, sample: list[dict]) -> str:
@@ -98,7 +175,7 @@ async def summarize_endpoint(body: SummarizeRequest):
         )
         resp = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=300,
+            max_tokens=500,
             messages=[{"role": "user", "content": prompt}],
         )
         text = resp.content[0].text.strip()

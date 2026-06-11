@@ -11,6 +11,11 @@ from providers.mcp_http import McpHttpProvider
 
 _CONFIG_PATH = Path(__file__).parent.parent / "config" / "providers.yaml"
 _providers: dict[str, McpHttpProvider] = {}
+_ALIASES = {
+    # Historical provider id retained only so older classifier output still
+    # resolves to the Chicago Marine Knowledge service.
+    "noaa-marine": "chicago-marine-knowledge",
+}
 
 
 def load() -> None:
@@ -27,7 +32,7 @@ def load() -> None:
 
 
 def get(provider_id: str) -> McpHttpProvider | None:
-    return _providers.get(provider_id)
+    return _providers.get(provider_id) or _providers.get(_ALIASES.get(provider_id, ""))
 
 
 def all_providers() -> list[McpHttpProvider]:

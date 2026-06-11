@@ -22,6 +22,7 @@ var WEBCAMS = [
         lat:      41.916389,
         lon:      -87.573056,
         minZoom:  14,
+        streetView: false,
 
         media: {
             type: 'still',
@@ -139,6 +140,13 @@ var WEBCAMS = [
                 className:  'ogrid-station-label',
                 offset:     [4, 0]
             });
+        if (cam.streetView !== false && ogrid.StreetView) {
+            ogrid.StreetView.attachToMarker(marker, {
+                lat: cam.lat,
+                lon: cam.lon,
+                title: (cam.name || '') + (cam.subtitle ? ' ' + cam.subtitle : '')
+            });
+        }
 
         var onMap = false;
 
@@ -154,6 +162,9 @@ var WEBCAMS = [
         }
 
         marker.on('click', function() {
+            if (cam.streetView !== false && ogrid.StreetView) {
+                ogrid.StreetView.openMarkerPopup(marker);
+            }
             var title = (cam.name || '') + (cam.subtitle ? ' ' + cam.subtitle : '');
             var show = function(data, error) {
                 if (ogrid.App && ogrid.App._rp && ogrid.App._rp.showStationContent) {

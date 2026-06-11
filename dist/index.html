@@ -58,10 +58,10 @@
     <nav id="ogrid-sidebar">
       <button id="ogrid-hamburger" type="button" aria-label="Toggle menu"><i class="fa fa-bars"></i></button>
       <ul class="ogrid-nav-items">
-        <li class="ogrid-nav-item active" data-section="search"><a href="#" title="Search"><i class="fa fa-search"></i><span>Search</span></a></li>
-        <li class="ogrid-nav-item" data-section="place"><a href="#" title="Place Profile"><i class="fa fa-map-marker"></i><span>Place Profile</span></a></li>
-        <li class="ogrid-nav-item" data-section="trends"><a href="#" title="Community Trends"><i class="fa fa-bar-chart"></i><span>Community Trends</span></a></li>
-        <li class="ogrid-nav-item" data-section="announce"><a href="#" title="Announcements &amp; Events"><i class="fa fa-calendar"></i><span>Announcements &amp; Events</span></a></li>
+        <li class="ogrid-nav-item active" data-section="search"><a href="#/map" title="Map"><i class="fa fa-search"></i><span>Map</span></a></li>
+        <li class="ogrid-nav-item" data-section="place"><a href="#/place-profile" title="Place Profile"><i class="fa fa-map-marker"></i><span>Place Profile</span></a></li>
+        <li class="ogrid-nav-item" data-section="trends"><a href="#/community-trends" title="Community Trends"><i class="fa fa-bar-chart"></i><span>Community Trends</span></a></li>
+        <li class="ogrid-nav-item" data-section="announce"><a href="#/announcements" title="Announcements &amp; Events"><i class="fa fa-calendar"></i><span>Announcements &amp; Events</span></a></li>
       </ul>
     </nav>
 
@@ -170,6 +170,9 @@
 
       <!-- Placeholder shown for non-Search nav sections -->
       <div id="ogrid-section-placeholder" class="hide"></div>
+
+      <!-- Community Trends profile page (rendered by CommunityProfile.js) -->
+      <div id="ogrid-community-profile" class="hide"></div>
 
       <div id="ogrid-map-overlays">
         <button id="ogrid-search-again">Search this area</button>

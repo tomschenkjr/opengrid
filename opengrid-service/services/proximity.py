@@ -11,8 +11,13 @@ Reference sources:
   - Named businesses via OSM name tag (Starbucks, McDonald's, etc.)
 """
 
+import csv
+import io
+import json
 import os
 import re
+import zipfile
+from datetime import datetime, timedelta, timezone
 from math import radians, cos, sin, asin, sqrt
 from pathlib import Path
 import httpx
@@ -55,9 +60,187 @@ OSM_CONFIGS: dict[str, str] = {
     "restaurants":   "amenity=restaurant",
     "fast food":     "amenity=fast_food",
     "transit stops": "public_transport=stop_position",
-    "bus stops":     "highway=bus_stop",
-    "train stations":"railway=station",
 }
+
+# Persistent objects already rendered on the map — resolved from live data,
+# but no separate reference layer is emitted (they're already visible).
+PERSISTENT_PROXIMITY: set[str] = {
+    # CTA El (train)
+    "cta stations", "cta el stations", "l stations", "el stations",
+    "cta train stations", "cta stops", "el stops", "l stops",
+    "train stations",
+    # CTA bus
+    "bus stops", "bus stations", "cta bus stops", "cta bus stations",
+}
+
+_BUS_STOP_ALIASES: set[str] = {
+    "bus stops", "bus stations", "cta bus stops", "cta bus stations",
+}
+
+_METRA_ALIASES: set[str] = {
+    "metra stations", "metra stops", "metra train stations",
+    "metra", "commuter rail stations", "commuter rail",
+}
+
+_FACILITY_ALIASES: dict[str, str] = {
+    "libraries": "libraries",
+    "library": "libraries",
+    "police stations": "police-stations",
+    "police station": "police-stations",
+    "fire stations": "fire-stations",
+    "fire station": "fire-stations",
+    "speed cameras": "speed-cameras",
+    "speed camera": "speed-cameras",
+    "bike racks": "bike-racks",
+    "bike rack": "bike-racks",
+    "bicycle racks": "bike-racks",
+    "bicycle rack": "bike-racks",
+}
+
+_DIVVY_ALIASES: set[str] = {
+    "divvy stations", "divvy station", "divvy bike stations", "bike share stations",
+}
+
+_OPEN_AIR_ALIASES: set[str] = {
+    "open air sensors", "open air chicago sensors", "air quality sensors", "air sensors",
+}
+
+PERSISTENT_PROXIMITY.update(_METRA_ALIASES)
+PERSISTENT_PROXIMITY.update(_FACILITY_ALIASES.keys())
+PERSISTENT_PROXIMITY.update(_DIVVY_ALIASES)
+PERSISTENT_PROXIMITY.update(_OPEN_AIR_ALIASES)
+
+_METRA_GTFS_PROX_URL = os.getenv("METRA_GTFS_URL", "https://schedules.metrarail.com/gtfs/schedule.zip")
+_metra_stops_prox_cache: dict = {"data": None, "expires": None}
+
+
+async def _fetch_metra_station_locations() -> list[dict]:
+    """Metra station locations from GTFS stops.txt. Cached 24h."""
+    now = datetime.now(timezone.utc)
+    if (_metra_stops_prox_cache["data"]
+            and _metra_stops_prox_cache["expires"]
+            and now < _metra_stops_prox_cache["expires"]):
+        return _metra_stops_prox_cache["data"]
+
+    async with httpx.AsyncClient(timeout=90, follow_redirects=True) as http:
+        r = await http.get(_METRA_GTFS_PROX_URL, headers={"User-Agent": "opengrid-service/1.0"})
+        r.raise_for_status()
+        content = r.content
+
+    stops = []
+    with zipfile.ZipFile(io.BytesIO(content)) as zf:
+        with zf.open("stops.txt") as f:
+            reader = csv.DictReader(io.TextIOWrapper(f, encoding="utf-8-sig"))
+            # Metra pads header names with a leading space (" stop_lat"), which
+            # breaks plain key lookups — strip them like the main GTFS parser does.
+            _ = reader.fieldnames
+            reader.fieldnames = [n.strip() for n in reader.fieldnames]
+            for row in reader:
+                try:
+                    lat = float(row.get("stop_lat") or 0)
+                    lon = float(row.get("stop_lon") or 0)
+                except (ValueError, TypeError):
+                    continue
+                if lat and lon:
+                    stops.append({
+                        "lat":  lat,
+                        "lon":  lon,
+                        "name": (row.get("stop_name") or "").strip(),
+                    })
+
+    _metra_stops_prox_cache["data"]    = stops
+    _metra_stops_prox_cache["expires"] = now + timedelta(hours=24)
+    return stops
+
+_CTA_STOPS_PROXIMITY_URL = "https://data.cityofchicago.org/resource/8pix-ypme.json"
+
+
+async def _fetch_cta_station_locations() -> list[dict]:
+    """CTA El stations deduplicated by parent station (map_id) for proximity filtering."""
+    app_token = os.getenv("SOCRATA_APP_TOKEN", "").strip() or None
+    headers = {"User-Agent": "opengrid-service/1.0"}
+    if app_token:
+        headers["X-App-Token"] = app_token
+
+    async with httpx.AsyncClient(headers=headers, timeout=20) as http:
+        r = await http.get(
+            _CTA_STOPS_PROXIMITY_URL,
+            # This dataset has no stop_lat/stop_lon columns — coordinates live in
+            # the `location` Point field only.
+            params={"$limit": 2000, "$select": "map_id,station_name,location"},
+        )
+        r.raise_for_status()
+        rows = r.json()
+
+    seen: dict = {}
+    for row in rows:
+        map_id = row.get("map_id")
+        if not map_id or map_id in seen:
+            continue
+        lat = lon = None
+        loc = row.get("location") or {}
+        if isinstance(loc, dict):
+            if loc.get("type") == "Point":
+                try:
+                    coords = loc["coordinates"]
+                    lon, lat = float(coords[0]), float(coords[1])
+                except (KeyError, IndexError, TypeError, ValueError):
+                    pass
+            elif "latitude" in loc:
+                try:
+                    lat, lon = float(loc["latitude"]), float(loc["longitude"])
+                except (KeyError, TypeError, ValueError):
+                    pass
+        if lat and lon:
+            seen[map_id] = {"lat": lat, "lon": lon, "name": row.get("station_name", "")}
+
+    return list(seen.values())
+
+
+async def _fetch_bus_stop_locations(bounds: dict | None = None) -> list[dict]:
+    """
+    CTA bus stops via OSM, scoped to the viewport when bounds are provided.
+    Capped at 500 to keep proximity filtering fast.
+    """
+    if bounds:
+        bbox = f"({bounds['minLat']},{bounds['minLon']},{bounds['maxLat']},{bounds['maxLon']})"
+    else:
+        bbox = _CHICAGO_BBOX
+    locs = await _fetch_osm_amenity("highway=bus_stop", bbox=bbox)
+    return locs[:500]
+
+
+async def _fetch_facility_locations(kind: str) -> list[dict]:
+    from routers import stations as station_data
+
+    rows = await station_data._fetch_facilities(kind)
+    return [
+        {"lat": row["lat"], "lon": row["lon"], "name": row.get("title") or row.get("name")}
+        for row in rows
+        if row.get("lat") and row.get("lon")
+    ]
+
+
+async def _fetch_divvy_station_locations() -> list[dict]:
+    from routers import stations as station_data
+
+    rows = await station_data._fetch_divvy_stations()
+    return [
+        {"lat": row["lat"], "lon": row["lon"], "name": row.get("name")}
+        for row in rows
+        if row.get("lat") and row.get("lon")
+    ]
+
+
+async def _fetch_open_air_sensor_locations() -> list[dict]:
+    from routers import stations as station_data
+
+    rows = await station_data._fetch_open_air_latest()
+    return [
+        {"lat": row["lat"], "lon": row["lon"], "name": row.get("sensor_name")}
+        for row in rows
+        if row.get("lat") and row.get("lon")
+    ]
 
 
 def haversine(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -124,13 +307,14 @@ async def _fetch_dataset_locations(ds: dict) -> list[dict]:
     return await _fetch_socrata_locations(config)
 
 
-async def _fetch_osm_amenity(tag: str) -> list[dict]:
+async def _fetch_osm_amenity(tag: str, bbox: str | None = None) -> list[dict]:
     """Fetch locations from OpenStreetMap via Overpass API using a tag query."""
     key, _, value = tag.partition("=")
+    bbox = bbox or _CHICAGO_BBOX
     query = (
         f"[out:json][timeout:15];"
-        f"(node[{key}={value}]{_CHICAGO_BBOX};"
-        f"way[{key}={value}]{_CHICAGO_BBOX};);"
+        f"(node[{key}={value}]{bbox};"
+        f"way[{key}={value}]{bbox};);"
         f"out center tags;"
     )
     async with httpx.AsyncClient(timeout=20) as http:
@@ -216,18 +400,32 @@ async def _geocode_address(address: str) -> list[dict]:
     return locs
 
 
-async def fetch_reference_locations(reference: str) -> list[dict]:
+async def fetch_reference_locations(reference: str, bounds: dict | None = None) -> list[dict]:
     """
     Return location dicts {lat, lon, name?} for a named reference type.
     Resolution order:
-      1. datasets.yaml proximity aliases (Socrata)
-      2. OSM_CONFIGS (known OSM amenity tags)
-      3. Street addresses → ArcGIS geocoder
-      4. Named businesses / landmarks → OSM name search
+      1. Persistent map objects (CTA stations, bus stops) — no reference layer emitted
+      2. datasets.yaml proximity aliases (Socrata)
+      3. OSM_CONFIGS (known OSM amenity tags)
+      4. Street addresses → ArcGIS geocoder
+      5. Named businesses / landmarks → OSM name search
     """
     key = reference.lower().strip()
 
     try:
+        if key in PERSISTENT_PROXIMITY:
+            if key in _BUS_STOP_ALIASES:
+                return await _fetch_bus_stop_locations(bounds)
+            if key in _METRA_ALIASES:
+                return await _fetch_metra_station_locations()
+            if key in _FACILITY_ALIASES:
+                return await _fetch_facility_locations(_FACILITY_ALIASES[key])
+            if key in _DIVVY_ALIASES:
+                return await _fetch_divvy_station_locations()
+            if key in _OPEN_AIR_ALIASES:
+                return await _fetch_open_air_sensor_locations()
+            return await _fetch_cta_station_locations()
+
         ds = _find_dataset_by_alias(reference)
         if ds:
             return await _fetch_dataset_locations(ds)
@@ -262,8 +460,9 @@ def filter_by_proximity(
     result = []
     for record in records:
         try:
-            lat = float(record.get(lat_field) or 0)
-            lon = float(record.get(lon_field) or 0)
+            lat, lon = _record_lat_lon(record, lat_field, lon_field)
+            lat = float(lat or 0)
+            lon = float(lon or 0)
             if not lat or not lon:
                 continue
         except (ValueError, TypeError):
@@ -275,3 +474,25 @@ def filter_by_proximity(
                 break
 
     return result
+
+
+def _record_lat_lon(record: dict, lat_field: str, lon_field: str) -> tuple[object | None, object | None]:
+    lat = record.get(lat_field)
+    lon = record.get(lon_field)
+    if (lat is not None and lon is not None) or "location" not in record:
+        return lat, lon
+
+    loc = record.get("location")
+    if isinstance(loc, str):
+        try:
+            loc = json.loads(loc)
+        except (json.JSONDecodeError, AttributeError):
+            loc = None
+    if isinstance(loc, dict):
+        lat = loc.get("latitude") or loc.get("lat")
+        lon = loc.get("longitude") or loc.get("lon")
+        coords = loc.get("coordinates")
+        if (lat is None or lon is None) and isinstance(coords, list) and len(coords) >= 2:
+            lon = coords[0]
+            lat = coords[1]
+    return lat, lon

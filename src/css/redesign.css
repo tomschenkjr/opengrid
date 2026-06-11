@@ -85,11 +85,29 @@
 
 /* Expanded: wider rail with text labels beside the icons */
 #ogrid-sidebar.expanded { width: 220px; }
-#ogrid-sidebar.expanded .ogrid-nav-item a {
-  flex-direction: row; justify-content: flex-start; gap: 14px;
-  padding: 14px 20px; font-size: 13px; text-align: left;
+#ogrid-sidebar.expanded #ogrid-hamburger {
+  display: flex; align-items: center; justify-content: flex-start;
+  padding: 0 18px; text-align: left;
 }
-#ogrid-sidebar.expanded .ogrid-nav-item a span { display: inline; }
+#ogrid-sidebar.expanded #ogrid-hamburger .fa {
+  width: 36px; height: 36px; display: inline-flex;
+  align-items: center; justify-content: center;
+}
+#ogrid-sidebar.expanded .ogrid-nav-item a {
+  flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px;
+  padding: 10px 18px; font-size: 13px; text-align: left;
+}
+#ogrid-sidebar.expanded .ogrid-nav-item a .fa {
+  flex: 0 0 36px; width: 36px; height: 36px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+#ogrid-sidebar.expanded .ogrid-nav-item.active a .fa {
+  padding: 0;
+}
+#ogrid-sidebar.expanded .ogrid-nav-item a span {
+  display: inline; flex: 1 1 auto; min-width: 0;
+  text-align: left; line-height: 1.2;
+}
 
 /* ========================== Floating search ============================= */
 #ogrid-search-float {
@@ -98,6 +116,7 @@
   z-index: 3500; transition: left .25s ease;
   display: flex; align-items: center; gap: 10px;
 }
+#ogrid-container.viewing-community-trends #ogrid-search-float { display: none; }
 /* Search has its own fixed width so the Summarize morph never resizes it */
 #ogrid-search-float #ogrid-search {
   flex: 0 0 auto; width: 520px !important; margin: 0 !important; min-width: 0;
@@ -306,6 +325,119 @@
 }
 .ogrid-result-card .rc-sub { color: var(--muted); font-size: 12px; margin-top: 6px; }
 
+.ogrid-result-card.ogrid-divvy-result-card .rc-top {
+  display: block;
+}
+
+.ogrid-result-card.ogrid-divvy-result-card .rc-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ogrid-divvy-pill-row {
+  margin-top: 7px;
+  max-width: 100%;
+}
+
+.ogrid-result-card.ogrid-divvy-result-card .ogrid-divvy-pill {
+  box-sizing: border-box;
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  max-width: min(220px, 100%);
+  white-space: normal;
+  line-height: 1.25;
+  text-align: left;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ogrid-openair-marker {
+  background: transparent;
+  border: none;
+}
+
+.ogrid-openair-icon-wrap {
+  width: 20px;
+  height: 20px;
+  background: #22c55e;
+  border: 2px solid #ecf0f1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+.ogrid-openair-icon-wrap .fa {
+  color: #ecf0f1;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.ogrid-openair-icon-wrap .fa-smog:before {
+  content: "\f0c2";
+}
+
+.ogrid-result-card.ogrid-openair-result-card {
+  cursor: default;
+}
+
+.ogrid-result-card.ogrid-openair-result-card .rc-pill {
+  flex: 0 0 auto;
+}
+
+.oa-chart-wrap {
+  height: 76px;
+  margin-top: 10px;
+}
+
+.oa-chart-empty {
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.oa-trend-label {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 3px;
+}
+
+.oa-metrics {
+  margin-top: 10px;
+}
+
+.oa-metric-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-top: 1px solid #edf0f4;
+}
+
+.oa-metric-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.oa-metric-value {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
 /* Expand/collapse details */
 .ogrid-result-card .rc-toggle {
   border: 0; background: transparent; color: var(--muted); cursor: pointer;
@@ -326,6 +458,50 @@
 .ogrid-result-card .rc-row .rc-k { color: var(--muted); font-weight: 600; flex: 0 0 auto; }
 .ogrid-result-card .rc-row .rc-v { color: var(--ink); text-align: right; word-break: break-word; }
 .ogrid-empty { color: var(--muted); text-align: center; padding: 30px 10px; }
+
+/* Street View images inside Leaflet popups */
+.ogrid-streetview-leaflet-popup .leaflet-popup-content {
+  margin: 12px;
+  width: 320px !important;
+}
+.ogrid-streetview-popup {
+  color: var(--ink);
+  line-height: 1.35;
+}
+.ogrid-streetview-title {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.ogrid-streetview {
+  width: 320px;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #eef2f6;
+  border: 1px solid #d7dee8;
+}
+.ogrid-streetview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ogrid-streetview-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+.ogrid-streetview-popup .ogrid-popup-fields {
+  margin-top: 10px;
+}
 
 /* Section placeholder (Place Profile / Trends / Announcements) */
 #ogrid-section-placeholder {

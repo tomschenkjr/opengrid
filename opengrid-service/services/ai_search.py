@@ -16,6 +16,7 @@ import re
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import httpx
 import yaml
@@ -30,11 +31,19 @@ client = Anthropic()
 _CONFIG_PATH = Path(__file__).parent.parent / "config" / "datasets.yaml"
 _datasets: list[dict] = []
 _crime_types: list[str] = []
+_MARINE_PROVIDER_ID = "chicago-marine-knowledge"
+_LEGACY_MARINE_PROVIDER_ID = "noaa-marine"
+_CHICAGO_TZ = ZoneInfo("America/Chicago")
 
 # Stable enum values hardcoded — these don't change in the source data
 _FOOD_RESULTS = "Pass | Pass w/ Conditions | Fail | No Entry | Out of Business"
 _FOOD_RISK = "Risk 1 (High) | Risk 2 (Medium) | Risk 3 (Low)"
 _311_STATUS = "Open | Closed | Open - Dup | Closed - Dup"
+_SCHOOL_PRIMARY_CATEGORY_LABELS = {
+    "ES": "Elementary School",
+    "HS": "High School",
+    "MS": "Middle School",
+}
 
 
 def _load_datasets() -> list[dict]:
@@ -47,6 +56,328 @@ def _load_datasets() -> list[dict]:
 
 def _find_dataset(dataset_id: str) -> dict | None:
     return next((d for d in _load_datasets() if d["id"] == dataset_id), None)
+
+
+def _dataset_is_spatial(ds: dict) -> bool:
+    return ds.get("spatial", True) is not False
+
+
+_DATA_QUERY_TERMS = re.compile(
+    r"\b(crime|crimes|311|service requests?|permits?|licenses?|inspections?|"
+    r"violations?|arrests?|towed vehicles?|traffic crashes?|crashes?)\b",
+    re.I,
+)
+
+_PERSISTENT_SEARCH: list[dict] = [
+    {
+        "id": "schools",
+        "display": "CPS Schools",
+        "color": "#4D7C0F",
+        "aliases": ["schools", "school", "cps schools", "public schools", "elementary schools", "high schools"],
+    },
+    {
+        "id": "libraries",
+        "display": "Libraries",
+        "color": "#0f766e",
+        "aliases": ["libraries", "library", "chicago public libraries"],
+    },
+    {
+        "id": "police-stations",
+        "display": "Police Stations",
+        "color": "#1d4ed8",
+        "aliases": ["police stations", "police station", "police districts", "police headquarters"],
+    },
+    {
+        "id": "fire-stations",
+        "display": "Fire Stations",
+        "color": "#dc2626",
+        "aliases": ["fire stations", "fire station", "firehouses", "fire houses"],
+    },
+    {
+        "id": "speed-cameras",
+        "display": "Speed Cameras",
+        "color": "#b45309",
+        "aliases": ["speed cameras", "speed camera", "speed camera locations"],
+    },
+    {
+        "id": "bike-racks",
+        "display": "Bike Racks",
+        "color": "#16a34a",
+        "aliases": ["bike racks", "bike rack", "bicycle racks", "bicycle rack"],
+    },
+    {
+        "id": "bus-stops",
+        "display": "CTA Bus Stops",
+        "color": "#1e88e5",
+        "aliases": ["bus stops", "bus stop", "cta bus stops", "cta bus stop", "bus stations"],
+    },
+    {
+        "id": "cta-stations",
+        "display": "CTA Stations",
+        "color": "#0f6fbf",
+        "aliases": ["cta stations", "cta station", "cta train stations", "l stations", "el stations", "train stations"],
+    },
+    {
+        "id": "metra-stations",
+        "display": "Metra Stations",
+        "color": "#7b2433",
+        "aliases": ["metra stations", "metra station", "metra stops", "commuter rail stations"],
+    },
+    {
+        "id": "divvy-stations",
+        "display": "Divvy Stations",
+        "color": "#40b4e5",
+        "aliases": ["divvy stations", "divvy station", "divvy bike stations", "bike share stations"],
+    },
+    {
+        "id": "open-air-sensors",
+        "display": "Open Air Chicago Sensors",
+        "color": "#22c55e",
+        "aliases": ["open air sensors", "open air chicago sensors", "air quality sensors", "air sensors"],
+    },
+    {
+        "id": "beach-water-quality",
+        "display": "Beach Water Quality Tests",
+        "color": "#2e7d32",
+        "aliases": ["beach water quality", "beach dna", "beach water tests", "beaches"],
+    },
+    {
+        "id": "beach-weather",
+        "display": "Beach Weather Stations",
+        "color": "#1565C0",
+        "aliases": ["beach weather stations", "beach weather sensors"],
+    },
+    {
+        "id": "dever-crib",
+        "display": "Dever Crib Weather Station",
+        "color": "#1565C0",
+        "aliases": ["dever crib", "dever crib weather station", "crib weather station", "william e dever crib"],
+    },
+]
+
+
+def _alias_in_query(query: str, alias: str) -> bool:
+    return re.search(r"(?<!\w)" + re.escape(alias) + r"(?!\w)", query, re.I) is not None
+
+
+def _persistent_spec_for_query(query: str) -> dict | None:
+    q = query.lower().strip()
+    for spec in _PERSISTENT_SEARCH:
+        for alias in sorted(spec["aliases"], key=len, reverse=True):
+            if not _alias_in_query(q, alias):
+                continue
+            # Let normal dataset/proximity searches handle "crimes near bus stops"
+            # and similar mixed data queries.
+            if _DATA_QUERY_TERMS.search(q) and not q.startswith(("show", "find", "list", "get")):
+                return None
+            if _DATA_QUERY_TERMS.search(q) and " near " in q:
+                return None
+            return spec
+    return None
+
+
+def _bbox_filter(items: list[dict], bounds: dict | None) -> list[dict]:
+    if not bounds:
+        return items
+    return [
+        item for item in items
+        if bounds["minLat"] <= item["lat"] <= bounds["maxLat"]
+        and bounds["minLon"] <= item["lon"] <= bounds["maxLon"]
+    ]
+
+
+def _near_filter(items: list[dict], current_location: dict | None, query: str) -> list[dict]:
+    if not current_location or not re.search(r"\b(near me|nearby|around me|close to me|my location|current location)\b", query, re.I):
+        return items
+    return [
+        item for item in items
+        if proximity.haversine(
+            float(current_location["lat"]), float(current_location["lon"]),
+            float(item["lat"]), float(item["lon"]),
+        ) <= 400
+    ]
+
+
+def _detail_text(details) -> str:
+    if not details:
+        return ""
+    if isinstance(details, list):
+        parts = []
+        for item in details:
+            label = item.get("label")
+            value = item.get("value")
+            if label and value not in (None, ""):
+                parts.append(f"{label}: {value}")
+        return " | ".join(parts)
+    return str(details)
+
+
+def _persistent_feature(item: dict, spec: dict) -> dict:
+    name = (
+        item.get("title") or item.get("long_name") or item.get("station_name")
+        or item.get("stop_name") or item.get("name") or item.get("beach")
+        or item.get("sensor_name") or spec["display"]
+    )
+    subtitle = item.get("subtitle") or item.get("address") or item.get("short_name") or ""
+    details = item.get("details")
+    if details is None:
+        details = []
+        for key, label in [
+            ("primary_category", "Category"),
+            ("school_type", "School Type"),
+            ("lines", "Lines"),
+            ("ada", "Accessible"),
+            ("capacity", "Capacity"),
+            ("vehicle_types_available_label", "Available Vehicles"),
+            ("num_docks_available", "Docks Available"),
+            ("time_label", "Reading Time"),
+            ("dna_reading_mean", "DNA Reading Mean"),
+            ("timestamp", "Timestamp"),
+            ("station_name", "Station"),
+            ("observed", "Observed"),
+            ("air_temp_f", "Air Temp F"),
+            ("wind_avg_ms", "Wind Avg m/s"),
+        ]:
+            if key in item and item.get(key) not in (None, ""):
+                details.append({"label": label, "value": item.get(key)})
+    return {
+        "type": "Feature",
+        "id": item.get("id") or item.get("school_id") or item.get("stop_id") or item.get("station_id") or name,
+        "geometry": {"type": "Point", "coordinates": [float(item["lon"]), float(item["lat"])]},
+        "properties": {
+            "name": name,
+            "type": item.get("kind_label") or spec["display"],
+            "subtitle": subtitle,
+            "details": _detail_text(details),
+        },
+    }
+
+
+def _persistent_fc(items: list[dict], spec: dict) -> dict:
+    return {
+        "type": "FeatureCollection",
+        "features": [_persistent_feature(item, spec) for item in items],
+        "meta": {
+            "view": {
+                "id": f"persistent-{spec['id']}",
+                "displayName": spec["display"],
+                "options": {
+                    "rendition": {
+                        "icon": "default",
+                        "color": spec["color"],
+                        "fillColor": spec["color"],
+                        "opacity": 85,
+                        "size": 6,
+                    }
+                },
+                "columns": [
+                    {"id": "name", "displayName": "Name", "dataType": "string", "popup": True, "list": True},
+                    {"id": "type", "displayName": "Type", "dataType": "string", "popup": True, "list": True},
+                    {"id": "subtitle", "displayName": "Location", "dataType": "string", "popup": True, "list": True},
+                    {"id": "details", "displayName": "Details", "dataType": "string", "popup": True, "list": True},
+                ],
+            }
+        },
+    }
+
+
+async def _persistent_items(spec: dict, bounds: dict | None) -> list[dict]:
+    from routers import stations as station_data
+
+    sid = spec["id"]
+    if sid == "schools":
+        items = await station_data._fetch_schools()
+    elif sid in {"libraries", "police-stations", "fire-stations", "speed-cameras", "bike-racks"}:
+        items = await station_data._fetch_facilities(sid)
+    elif sid == "bus-stops":
+        items = await station_data._fetch_bus_stops()
+    elif sid == "cta-stations":
+        items = await station_data.cta_trains()
+    elif sid == "metra-stations":
+        data = await station_data._parse_metra_data()
+        items = data.get("stops", [])
+    elif sid == "divvy-stations":
+        items = await station_data._fetch_divvy_stations()
+    elif sid == "open-air-sensors":
+        items = await station_data._fetch_open_air_latest()
+        items = [
+            {**item, "title": f"{item.get('sensor_name') or 'Open Air'} Open Air Chicago Sensor"}
+            for item in items
+        ]
+    elif sid == "beach-water-quality":
+        raw = await station_data.beach_dna()
+        items = [
+            {
+                **item,
+                "lat": item.get("latitude"),
+                "lon": item.get("longitude"),
+                "title": f"{item.get('beach', 'Beach')} Water Quality Tests",
+            }
+            for item in raw
+        ]
+    elif sid == "beach-weather":
+        raw = await station_data.beach_weather()
+        items = [
+            {
+                **item,
+                "lat": item.get("latitude"),
+                "lon": item.get("longitude"),
+                "title": f"{item.get('station_name', 'Beach')} Weather Station",
+            }
+            for item in raw
+        ]
+    elif sid == "dever-crib":
+        try:
+            obs = await station_data.dever_crib_conditions()
+        except Exception:
+            obs = {}
+        items = [{
+            **obs,
+            "id": "dever-crib",
+            "title": "Dever Crib Weather Station",
+            "subtitle": "NOAA GLERL Chicago Station",
+            "lat": 41.916389,
+            "lon": -87.573056,
+        }]
+    else:
+        items = []
+
+    valid = []
+    for item in items:
+        try:
+            lat = float(item.get("lat"))
+            lon = float(item.get("lon"))
+        except (TypeError, ValueError):
+            continue
+        if lat and lon:
+            valid.append({**item, "lat": lat, "lon": lon})
+    return _bbox_filter(valid, bounds)
+
+
+async def _persistent_object_search(query: str, bounds: dict | None, current_location: dict | None) -> dict | None:
+    spec = _persistent_spec_for_query(query)
+    if not spec:
+        return None
+    try:
+        items = await _persistent_items(spec, bounds)
+        items = _near_filter(items, current_location, query)
+        return _persistent_fc(items, spec)
+    except Exception as e:
+        print(f"[persistent_search] {spec['id']} unavailable: {e}")
+        return None
+
+
+def _normalize_rows_for_dataset(rows: list[dict], ds: dict) -> list[dict]:
+    if ds.get("id") != "schools":
+        return rows
+    normalized = []
+    for row in rows:
+        copy = dict(row)
+        cat = str(copy.get("primary_category") or "").strip().upper()
+        if cat in _SCHOOL_PRIMARY_CATEGORY_LABELS:
+            copy["primary_category"] = _SCHOOL_PRIMARY_CATEGORY_LABELS[cat]
+        normalized.append(copy)
+    return normalized
 
 
 async def _fetch_crime_types() -> list[str]:
@@ -103,7 +434,7 @@ External providers (for weather, marine, and non-Chicago-data queries):
 
 ROUTING RULES — use a provider when the query matches these phrases or topics:
 
-Marine/lake queries → noaa-marine
+Marine/lake queries → chicago-marine-knowledge
   Triggers: "marine forecast", "lake forecast", "lake conditions", "lake michigan conditions",
   "boating conditions", "sailing conditions", "is it safe to sail", "is it safe to boat",
   "water advisories", "marine advisories", "small craft advisories", "wave advisories",
@@ -112,10 +443,13 @@ Marine/lake queries → noaa-marine
   "going out on the water", "conditions on the water", "buoy readings", "water temperature",
   "lake michigan forecast", "what's the lake like", "how are conditions on the lake",
   "is the lake rough", "lake surf", "lake chop"
-  Response (general conditions) — always pass zone_id in args:
-    {{"provider_id": "noaa-marine", "tool": "get_nearshore_forecast", "args": {{"zone_id": "LMZ742"}}, "zone_id": "LMZ742", "intent": "analytical"}}
-  Response (advisories/alerts specifically):
-    {{"provider_id": "noaa-marine", "tool": "get_marine_alerts", "args": {{"zone_id": "LMZ742"}}, "zone_id": "LMZ742", "intent": "analytical"}}
+  Response (general lake/sailing conditions, including advisories — use Chicago Marine Knowledge, which folds NOAA marine alerts into its response):
+    {{"provider_id": "chicago-marine-knowledge", "tool": "get_sailing_conditions", "args": {{"area_id": "chicago_lakefront", "response_profile": "compact_llm"}}, "zone_id": "LMZ742", "intent": "analytical"}}
+  Response (conditions at a specific lakefront place — harbor or beach):
+    {{"provider_id": "chicago-marine-knowledge", "tool": "get_marine_conditions", "args": {{"place_id": "monroe_harbor", "response_profile": "compact_llm"}}, "zone_id": "LMZ742", "intent": "analytical"}}
+  Marine args use area_id ("chicago_lakefront") or place_id (monroe_harbor, oak_street_beach, foster_beach, 63rd_street_beach) — never zone_id.
+  Always include "response_profile": "compact_llm" in marine args.
+  zone_id stays at the top level only (it selects the map polygon).
 
 Land weather queries → noaa-weather
   Triggers: "weather forecast", "temperature", "rain forecast", "snow forecast",
@@ -126,7 +460,7 @@ Land weather queries → noaa-weather
 The zone_id determines which NWS zone polygon appears on the map.
 For tools requiring lat/lon, default to Chicago center (41.8781, -87.6298).
 Mixed Socrata + provider results use a JSON array:
-  [{{"dataset_id": "crimes", "soql_where": null, "intent": "display"}}, {{"provider_id": "noaa-marine", "tool": "get_nearshore_forecast", "args": {{}}, "zone_id": "LMZ742", "intent": "analytical"}}]"""
+  [{{"dataset_id": "crimes", "soql_where": null, "intent": "display"}}, {{"provider_id": "chicago-marine-knowledge", "tool": "get_sailing_conditions", "args": {{"area_id": "chicago_lakefront", "response_profile": "compact_llm"}}, "zone_id": "LMZ742", "intent": "analytical"}}]"""
 
 
 def _build_system_prompt() -> str:
@@ -152,6 +486,12 @@ def _build_system_prompt() -> str:
                 line += f"\n    Values: {_FOOD_RISK}"
             elif ds["id"] == "311-service-requests" and col["id"] == "status":
                 line += f"\n    Values: {_311_STATUS}"
+            elif ds["id"] == "schools" and col["id"] == "primary_category":
+                line += "\n    Values: ES = Elementary School, HS = High School, MS = Middle School. Use ES/HS/MS in SOQL, but display the long label to users."
+            elif ds["id"] == "schools" and col["id"] == "culture_climate_rating":
+                line += "\n    Values include: Well Organized | Organized | Moderately Organized | Partially Organized | Not Yet Organized | Not Enough Data. For a quoted value like \"organized\", use culture_climate_rating = 'Organized'."
+            elif ds["id"] == "schools" and col["id"] in {"student_growth_rating", "student_attainment_rating"}:
+                line += "\n    Values include: FAR ABOVE EXPECTATIONS | ABOVE EXPECTATIONS | MET EXPECTATIONS | BELOW EXPECTATIONS | FAR BELOW EXPECTATIONS | NO DATA AVAILABLE."
             col_lines.append(line)
 
         blocks.append(
@@ -167,7 +507,7 @@ def _build_system_prompt() -> str:
         dataset_aliases.extend(prox.get("aliases", []))
 
     osm_refs = (
-        "libraries, parks, gas stations, coffee shops, cafes, hospitals, "
+        "parks, gas stations, coffee shops, cafes, hospitals, "
         "pharmacies, grocery stores, bars, restaurants, fast food, "
         "transit stops, bus stops, train stations"
     )
@@ -214,6 +554,7 @@ Distance conversions:
 Reference types — use the exact string shown:
   Dataset references: {', '.join(dataset_aliases)}
   OSM references: {osm_refs}
+  Persistent map objects (always on map — use exact phrase): CTA stations, L stations, el stations, train stations, bus stops, bus stations, CTA bus stops, metra stations, metra stops, commuter rail stations, schools, libraries, police stations, fire stations, speed cameras, bike racks, Divvy stations, Open Air sensors
   User's current location: use "current location" exactly when the user says "near me", "around me", "nearby", "near here", "at my house", "at my home", "where I live", "my location", "in my neighborhood", or any phrase meaning the user's own position
   Street addresses: use the address exactly as given (e.g. "900 W Washington Blvd")
   Named businesses/landmarks: use the exact name (e.g. "Starbucks", "United Center")
@@ -519,30 +860,38 @@ _MARINE_HIGH_ALERTS = frozenset({
 _MARINE_MEDIUM_ALERTS = frozenset({"Small Craft Advisory"})
 
 
-async def _marine_alert_colors(provider: Any, zone_ids: list[str]) -> dict:
+def _marine_alert_event(alert: dict) -> str:
+    text = " ".join(
+        _clean_marine_text(alert.get(key))
+        for key in ("event", "headline", "name", "title")
+        if alert.get(key)
+    )
+    low = text.lower()
+    for event in _MARINE_HIGH_ALERTS | _MARINE_MEDIUM_ALERTS:
+        if event.lower() in low:
+            return event
+    return _clean_marine_text(alert.get("event"))
+
+
+def _marine_alert_display_from_payload(content_str: str) -> dict:
     """
-    Color overrides from active NWS marine alerts across the given zones. The
-    combined shape is colored if a warning/advisory is active in ANY of them.
-    Rules unchanged: red for warnings, yellow for Small Craft Advisory.
+    Style the combined Chicago lake-zone polygon from Chicago Marine Knowledge
+    alerts embedded in the MCP response.
     """
-    events: set[str] = set()
     try:
-        raws = await asyncio.gather(
-            *[provider.call_tool("get_marine_alerts", {"zone_id": z}) for z in zone_ids],
-            return_exceptions=True,
-        )
-        for raw in raws:
-            if isinstance(raw, Exception):
-                continue
-            data = json.loads(_extract_mcp_text(raw))
-            for a in data.get("alerts", []):
-                events.add(a.get("event", ""))
-        if events & _MARINE_HIGH_ALERTS:
-            return {"color": "#AA0000", "fillColor": "#FF4444"}
-        if events & _MARINE_MEDIUM_ALERTS:
-            return {"color": "#CC8800", "fillColor": "#FFD700"}
-    except Exception as e:
-        print(f"[smart_search] marine alert check failed for {zone_ids}: {e}")
+        data = json.loads(content_str)
+    except (json.JSONDecodeError, TypeError):
+        return {}
+    alerts = ((data.get("alerts_first") or {}).get("alerts") or []) if isinstance(data, dict) else []
+    events = {
+        _marine_alert_event(alert)
+        for alert in alerts
+        if isinstance(alert, dict)
+    }
+    if events & _MARINE_HIGH_ALERTS:
+        return {"color": "#B91C1C", "fillColor": "#EF4444", "opacity": 70, "fill": True}
+    if events & _MARINE_MEDIUM_ALERTS:
+        return {"color": "#B7791F", "fillColor": "#FDE047", "opacity": 70, "fill": True}
     return {}
 
 
@@ -561,9 +910,354 @@ def _extract_mcp_text(mcp_result: Any) -> str:
     return str(mcp_result)
 
 
+def _marine_is_recent(ts: str, hours: int = 36) -> bool:
+    if not ts:
+        return False
+    try:
+        dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt >= datetime.now(timezone.utc) - timedelta(hours=hours)
+    except (ValueError, TypeError):
+        return False
+
+
+def _normalize_provider_id(provider_id: str | None) -> str:
+    if provider_id == _LEGACY_MARINE_PROVIDER_ID:
+        return _MARINE_PROVIDER_ID
+    return provider_id or ""
+
+
+def _clean_marine_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, (list, tuple)):
+        return ", ".join(_clean_marine_text(v) for v in value if _clean_marine_text(v))
+    text = re.sub(r"\s+", " ", str(value)).strip()
+    return text
+
+
+def _format_marine_timestamp(value: Any) -> str:
+    text = _clean_marine_text(value)
+    if not text:
+        return ""
+    try:
+        dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            return dt.strftime("%b %-d, %-I:%M %p")
+        return dt.astimezone(_CHICAGO_TZ).strftime("%b %-d, %-I:%M %p %Z")
+    except (ValueError, TypeError):
+        return text
+
+
+def _first_marine_value(alert: dict, keys: tuple[str, ...]) -> str:
+    for key in keys:
+        value = _clean_marine_text(alert.get(key))
+        if value:
+            return value
+    return ""
+
+
+def _format_marine_alert(alert: dict) -> str:
+    event = _first_marine_value(alert, ("event", "event_name", "name", "title"))
+    headline = _first_marine_value(alert, ("headline", "summary"))
+    severity = _first_marine_value(alert, ("severity", "urgency", "certainty"))
+    area = _first_marine_value(alert, ("areaDesc", "area_desc", "area", "zones"))
+    effective = _format_marine_timestamp(
+        alert.get("effective") or alert.get("onset") or alert.get("starts")
+    )
+    expires = _format_marine_timestamp(
+        alert.get("expires") or alert.get("ends") or alert.get("end")
+    )
+    description = _first_marine_value(alert, ("description", "desc"))
+    instruction = _first_marine_value(alert, ("instruction", "instructions"))
+
+    pieces = []
+    if event and headline and event not in headline:
+        pieces.append(f"{event}: {headline}")
+    else:
+        pieces.append(headline or event or "Marine alert")
+
+    context = []
+    if severity:
+        context.append(severity)
+    if area:
+        context.append(area)
+    if effective or expires:
+        if effective and expires:
+            context.append(f"{effective} to {expires}")
+        elif effective:
+            context.append(f"effective {effective}")
+        else:
+            context.append(f"expires {expires}")
+    if context:
+        pieces.append("(" + "; ".join(context) + ")")
+    if description and description not in headline:
+        pieces.append(description)
+    if instruction:
+        pieces.append("Instruction: " + instruction)
+    return " ".join(pieces)
+
+
+def _marine_alert_details(alerts_block: dict) -> tuple[str, str]:
+    if not isinstance(alerts_block, dict):
+        return "", "No active marine alerts reported."
+    alerts = [a for a in (alerts_block.get("alerts") or []) if isinstance(a, dict)]
+    if alerts:
+        detail = " ".join(_format_marine_alert(alert) for alert in alerts)
+        names = [
+            _first_marine_value(alert, ("event", "headline", "name", "title"))
+            for alert in alerts
+        ]
+        names = [name for name in names if name]
+        summary = "Marine alerts/advisories" if len(alerts) != 1 else "Marine alert/advisory"
+        if names:
+            summary += ": " + "; ".join(names)
+        return detail, summary + ". " + detail
+
+    msg = _clean_marine_text(alerts_block.get("message")) or "No active marine alerts reported."
+    return "", msg
+
+
+def _marine_source_notes(data: dict) -> str:
+    statuses = data.get("source_statuses") or []
+    unavailable = []
+    for status in statuses:
+        if not isinstance(status, dict):
+            continue
+        if status.get("status") not in ("healthy", "ok"):
+            name = status.get("name") or status.get("source")
+            detail = _clean_marine_text(status.get("detail"))
+            if name:
+                unavailable.append(name + (f" ({detail})" if detail else ""))
+    return "; ".join(unavailable)
+
+
+def _marine_summary_context(data: dict, alert_summary: str) -> str:
+    base_context = data.get("llm_briefing_context") or data.get("headline") or ""
+    if alert_summary.lower().startswith("marine alert/advisory"):
+        base_context = re.sub(
+            r"\bNo active marine alerts reported\.?\s*",
+            "",
+            base_context,
+            flags=re.IGNORECASE,
+        )
+    parts = [
+        base_context,
+        alert_summary,
+    ]
+    forecast = data.get("marine_forecast_baseline") or {}
+    wind_text = ((forecast.get("wind_kt") or {}).get("text") or "").strip()
+    wave_text = ((forecast.get("waves_ft") or {}).get("text") or "").strip()
+    if wind_text:
+        parts.append(f"Forecast wind: {wind_text}.")
+    if wave_text:
+        parts.append(f"Forecast waves: {wave_text}.")
+    source_notes = _marine_source_notes(data)
+    if source_notes:
+        parts.append(f"Source limitations: {source_notes}.")
+    return " ".join(_clean_marine_text(p) for p in parts if _clean_marine_text(p))
+
+
+def _deg_to_cardinal(deg: float | None) -> str:
+    if deg is None:
+        return ""
+    dirs = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+            "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
+    return dirs[round(float(deg) / 22.5) % 16]
+
+
+def _fmt_temp(c: float | None) -> str:
+    if c is None or c == 0:
+        return ""
+    f = round(c * 9 / 5 + 32)
+    return f"{c}°C ({f}°F)"
+
+
+def _fmt_wind_kt(mps: float | None, dir_deg: float | None = None, gust_mps: float | None = None) -> str:
+    if not mps or mps == 0:
+        return ""
+    kt = round(mps * 1.94384, 1)
+    card = _deg_to_cardinal(dir_deg)
+    s = f"{kt} kt" + (f" {card}" if card else "")
+    if gust_mps and gust_mps > mps:
+        s += f" (gust {round(gust_mps * 1.94384, 1)} kt)"
+    return s
+
+
+def _format_marine_conditions(content_str: str, zone_label: str) -> tuple[dict, list] | None:
+    """
+    Parse a marine MCP JSON response into structured card properties + columns.
+    Returns (properties, columns) or None if content_str is not recognized marine JSON.
+    The column order drives ResultsPanel card layout: first list:true string → title,
+    any column whose id matches statusIds ('risk') → pill badge.
+    """
+    try:
+        data = json.loads(content_str)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    if not isinstance(data, dict) or "headline" not in data:
+        return None
+
+    forecast = data.get("marine_forecast_baseline") or {}
+    forecast_wind = (forecast.get("wind_kt") or {}).get("text", "")
+    forecast_waves = (forecast.get("waves_ft") or {}).get("text", "")
+
+    wa = data.get("wind_assessment") or {}
+    wind_cat = wa.get("category", "")
+    wva = data.get("wave_assessment") or {}
+    wave_cat = wva.get("category", "")
+
+    alerts_block = data.get("alerts_first") or {}
+    alerts_detail, alerts_summary = _marine_alert_details(alerts_block)
+
+    cautions = data.get("cautions") or []
+    cautions_str = "; ".join(str(c) for c in cautions) if cautions else ""
+
+    props: dict = {
+        "title": "Lake Conditions",
+        "summary": data.get("headline", ""),
+        "risk_level": (data.get("risk_level") or "").title(),
+        "zone_id": zone_label,
+        "marine_summary_context": _marine_summary_context(data, alerts_summary),
+        "marine_alert_summary": alerts_summary,
+        "marine_raw_payload": json.dumps(data, separators=(",", ":")),
+    }
+    if forecast_wind:
+        props["forecast_wind"] = forecast_wind
+    if forecast_waves:
+        props["forecast_waves"] = forecast_waves
+    if wind_cat:
+        props["wind_category"] = wind_cat.replace("_", " ")
+    if wave_cat:
+        props["wave_category"] = wave_cat.replace("_", " ")
+    if alerts_detail:
+        props["alerts"] = alerts_detail
+    if cautions_str:
+        props["cautions"] = cautions_str
+
+    columns: list = [
+        {"id": "title", "displayName": "Title", "dataType": "string", "popup": False, "list": True},
+        {"id": "summary", "displayName": "Summary", "dataType": "string", "popup": True, "list": False},
+        {"id": "risk_level", "displayName": "Risk Level", "dataType": "string", "popup": True, "list": False},
+        {"id": "zone_id", "displayName": "Zone", "dataType": "string", "popup": True, "list": False},
+        {"id": "marine_summary_context", "displayName": "Marine Summary Context", "dataType": "string", "popup": False, "list": False},
+        {"id": "marine_alert_summary", "displayName": "Marine Alert Summary", "dataType": "string", "popup": False, "list": False},
+        {"id": "marine_raw_payload", "displayName": "Marine Raw Payload", "dataType": "string", "popup": False, "list": False},
+    ]
+    if forecast_wind:
+        columns.append({"id": "forecast_wind", "displayName": "Wind Forecast", "dataType": "string", "popup": True, "list": False})
+    if forecast_waves:
+        columns.append({"id": "forecast_waves", "displayName": "Wave Forecast", "dataType": "string", "popup": True, "list": False})
+    if wind_cat:
+        columns.append({"id": "wind_category", "displayName": "Wind Category", "dataType": "string", "popup": True, "list": False})
+    if wave_cat:
+        columns.append({"id": "wave_category", "displayName": "Wave Category", "dataType": "string", "popup": True, "list": False})
+    if alerts_detail:
+        columns.append({"id": "alerts", "displayName": "Alerts / Advisories", "dataType": "string", "popup": True, "list": False})
+    if cautions_str:
+        columns.append({"id": "cautions", "displayName": "Cautions", "dataType": "string", "popup": True, "list": False})
+
+    # --- per-station observations (skip stale and all-zero entries) ----------
+    obs = data.get("observation_summary") or {}
+
+    # Dever Crib (primary offshore station)
+    dc = obs.get("dever_crib") or {}
+    if dc and _marine_is_recent(dc.get("observed_at", "")):
+        v = dc.get("values") or {}
+        parts = []
+        t = _fmt_temp(v.get("air_temperature_c"))
+        if t:
+            parts.append(t)
+        w = _fmt_wind_kt(v.get("wind_speed_mps"), v.get("wind_direction_deg"), v.get("wind_gust_mps"))
+        if w:
+            parts.append(w)
+        rh = v.get("relative_humidity_percent")
+        if rh and rh != 0:
+            parts.append(f"{rh}% RH")
+        if parts:
+            props["obs_dever_crib"] = " · ".join(parts)
+            columns.append({"id": "obs_dever_crib", "displayName": dc.get("sensor_name", "Dever Crib"), "dataType": "string", "popup": True, "list": False})
+
+    # City beach weather stations
+    for s in (obs.get("city_weather") or []):
+        if not _marine_is_recent(s.get("observed_at", "")):
+            continue
+        v = s.get("values") or {}
+        temp_c = v.get("air_temperature_c")
+        wind_mps = v.get("wind_speed_mps")
+        if (not temp_c or temp_c == 0) and (not wind_mps or wind_mps == 0):
+            continue
+        parts = []
+        t = _fmt_temp(temp_c)
+        if t:
+            parts.append(t)
+        w = _fmt_wind_kt(wind_mps, v.get("wind_direction_deg"))
+        if w:
+            parts.append(w)
+        rh = v.get("relative_humidity_percent")
+        if rh and rh != 0:
+            parts.append(f"{rh}% RH")
+        bp = v.get("barometric_pressure_hpa")
+        if bp and bp != 0:
+            parts.append(f"{bp} hPa")
+        if parts:
+            sid = "obs_wx_" + s.get("sensor_id", "").replace(" ", "_")
+            props[sid] = " · ".join(parts)
+            columns.append({"id": sid, "displayName": s.get("sensor_name", sid), "dataType": "string", "popup": True, "list": False})
+
+    # City beach water sensors
+    for s in (obs.get("city_water") or []):
+        if not _marine_is_recent(s.get("observed_at", "")):
+            continue
+        v = s.get("values") or {}
+        quality = s.get("quality_flags") or []
+        temp_c = v.get("water_temperature_c")
+        if "water_temperature:bad_sentinel" in quality:
+            temp_c = None
+        wave_m = v.get("wave_height_m")
+        period_s = v.get("wave_period_s")
+        if not temp_c and (not wave_m or wave_m == 0) and (not period_s or period_s == 0):
+            continue
+        parts = []
+        t = _fmt_temp(temp_c)
+        if t:
+            parts.append(f"Water {t}")
+        if wave_m and wave_m > 0:
+            parts.append(f"Waves {round(wave_m * 3.28084, 1)} ft")
+        if period_s and period_s > 0:
+            parts.append(f"Period {period_s}s")
+        if parts:
+            sid = "obs_water_" + s.get("sensor_id", "").replace(" ", "_")
+            props[sid] = " · ".join(parts)
+            columns.append({"id": sid, "displayName": s.get("sensor_name", sid) + " (water)", "dataType": "string", "popup": True, "list": False})
+
+    # Buoys
+    for b in (obs.get("buoys") or []):
+        if not _marine_is_recent(b.get("observed_at", "")):
+            continue
+        v = b.get("values") or {}
+        parts = []
+        t = _fmt_temp(v.get("water_temperature_c") or v.get("air_temperature_c"))
+        if t:
+            parts.append(t)
+        w = _fmt_wind_kt(v.get("wind_speed_mps"), v.get("wind_direction_deg"), v.get("wind_gust_mps"))
+        if w:
+            parts.append(w)
+        wh = v.get("wave_height_m")
+        if wh and wh > 0:
+            parts.append(f"Waves {round(wh * 3.28084, 1)} ft")
+        if parts:
+            sid = "obs_buoy_" + b.get("sensor_id", "").replace(" ", "_")
+            props[sid] = " · ".join(parts)
+            columns.append({"id": sid, "displayName": b.get("sensor_name", sid), "dataType": "string", "popup": True, "list": False})
+
+    return props, columns
+
+
 async def _process_mcp_result(result: dict) -> dict | None:
     """Process a Haiku MCP result → GeoJSON FeatureCollection with NWS zone polygon."""
-    provider_id = result.get("provider_id")
+    provider_id = _normalize_provider_id(result.get("provider_id"))
     tool_name = result.get("tool")
     args = result.get("args", {})
     zone_id = result.get("zone_id", "")
@@ -573,9 +1267,9 @@ async def _process_mcp_result(result: dict) -> dict | None:
         print(f"[smart_search] Unknown provider: {provider_id!r}")
         return None
 
-    # For marine providers the geometry is the COMBINED Chicago shoreline zones
+    # For Chicago Marine Knowledge the geometry is the COMBINED Chicago shoreline zones
     # (LMZ740/741/742). Alert coloring spans all of them.
-    if provider_id == "noaa-marine":
+    if provider_id == _MARINE_PROVIDER_ID:
         async def _none():
             return None
 
@@ -585,17 +1279,14 @@ async def _process_mcp_result(result: dict) -> dict | None:
         results = await asyncio.gather(
             provider.call_tool(tool_name, args),
             zone_resolver.get_combined_zone_geojson(zones) if zones else _none(),
-            _marine_alert_colors(provider, zones),
             return_exceptions=True,
         )
-        mcp_result, zone_geom, alert_display = results
+        mcp_result, zone_geom = results
         if isinstance(mcp_result, Exception):
             print(f"[smart_search] MCP call {provider_id}.{tool_name} failed: {mcp_result}")
             return None
         if isinstance(zone_geom, Exception):
             zone_geom = None
-        if isinstance(alert_display, Exception):
-            alert_display = {}
         zone_label = "+".join(z.upper() for z in zones) if zones else zone_id.upper()
     else:
         try:
@@ -613,9 +1304,20 @@ async def _process_mcp_result(result: dict) -> dict | None:
 
     content_str = _extract_mcp_text(mcp_result)
     cfg = provider._config
+    alert_display = _marine_alert_display_from_payload(content_str) if provider_id == _MARINE_PROVIDER_ID else {}
     display = {**cfg.get("display", {}), **alert_display}
     feature_id = f"{provider_id}-{zone_label}"
     display_name = cfg.get("description", provider_id)
+
+    marine_fmt = _format_marine_conditions(content_str, zone_label)
+    if marine_fmt:
+        feature_props, feature_columns = marine_fmt
+    else:
+        feature_props = {"zone_id": zone_label, "conditions": content_str}
+        feature_columns = [
+            {"id": "zone_id", "displayName": "Zone", "dataType": "string", "popup": True, "list": True},
+            {"id": "conditions", "displayName": "Conditions", "dataType": "string", "popup": True, "list": False},
+        ]
 
     return {
         "type": "FeatureCollection",
@@ -623,10 +1325,7 @@ async def _process_mcp_result(result: dict) -> dict | None:
             "type": "Feature",
             "id": feature_id,
             "geometry": zone_geom,
-            "properties": {
-                "zone_id": zone_label,
-                "conditions": content_str,
-            },
+            "properties": feature_props,
         }],
         "meta": {
             "view": {
@@ -637,15 +1336,13 @@ async def _process_mcp_result(result: dict) -> dict | None:
                         "icon": "boundary",
                         "color": display.get("color", "#5588CC"),
                         "fillColor": display.get("fillColor", "#AACCEE"),
+                        "fill": display.get("fill", False),
                         "opacity": display.get("opacity", 50),
                         "size": 8,
                         "borderWidth": 2,
                     }
                 },
-                "columns": [
-                    {"id": "zone_id", "displayName": "Zone", "dataType": "string", "popup": True, "list": True},
-                    {"id": "conditions", "displayName": "Conditions", "dataType": "string", "popup": True, "list": False},
-                ],
+                "columns": feature_columns,
             }
         },
     }
@@ -676,6 +1373,7 @@ async def _process_single_result(result: dict, bounds: dict | None, current_loca
     if not ds:
         return None
 
+    is_spatial = _dataset_is_spatial(ds)
     soql_where = result.get("soql_where") or ""
 
     geo_clause = _build_geo_clause(result.get("geography"), ds)
@@ -687,13 +1385,14 @@ async def _process_single_result(result: dict, bounds: dict | None, current_loca
     # If the caller supplied GPS coordinates but Haiku omitted a proximity field,
     # default to filtering within 400 m of the user's position rather than falling
     # back to the broad viewport filter.
-    if current_location and not prox:
+    if is_spatial and current_location and not prox:
         prox = {"reference": "current location", "distance_meters": 400}
 
     # For "current location" proximity, push the spatial filter into SoQL via
     # within_circle() so Socrata does the work — no row-count cap, no Python loop.
     _using_circle = False
-    if current_location and prox and prox.get("reference", "").lower().strip() == "current location":
+    if (is_spatial and current_location and prox
+            and prox.get("reference", "").lower().strip() == "current location"):
         radius_m = float(prox.get("distance_meters", 400))
         circle_clause = (
             f"within_circle(location, {current_location['lat']}, "
@@ -705,7 +1404,7 @@ async def _process_single_result(result: dict, bounds: dict | None, current_loca
     limit = 500 if _using_circle else (1000 if prox else 500)
 
     has_geo_context = bool(result.get("geography") or prox)
-    if bounds and not has_geo_context:
+    if is_spatial and bounds and not has_geo_context:
         b = bounds
         viewport_clause = (
             f"within_box(location, {b['minLat']}, {b['minLon']}, {b['maxLat']}, {b['maxLon']})"
@@ -728,9 +1427,10 @@ async def _process_single_result(result: dict, bounds: dict | None, current_loca
         limit=limit,
         order=result.get("order_by"),
     )
+    rows = _normalize_rows_for_dataset(rows, ds)
 
     proximity_meta = None
-    if prox and rows:
+    if is_spatial and prox and rows:
         print(f"[smart_search] proximity reference={prox['reference']!r} distance={prox.get('distance_meters')}m")
         if prox["reference"].lower().strip() == "current location":
             if current_location:
@@ -738,7 +1438,7 @@ async def _process_single_result(result: dict, bounds: dict | None, current_loca
             else:
                 ref_locs = []
         else:
-            ref_locs = await proximity.fetch_reference_locations(prox["reference"])
+            ref_locs = await proximity.fetch_reference_locations(prox["reference"], bounds=bounds)
         print(f"[smart_search] ref_locs count={len(ref_locs)}")
         if ref_locs:
             distance_m = float(prox.get("distance_meters", 400))
@@ -754,10 +1454,11 @@ async def _process_single_result(result: dict, bounds: dict | None, current_loca
                 cols = ds.get("columns", [])
                 if next((c for c in cols if c.get("dataType") == "date"), None):
                     label += " (last 90 days)"
+            is_persistent = prox["reference"].lower().strip() in proximity.PERSISTENT_PROXIMITY
             proximity_meta = {
                 "label": label,
                 "distance_meters": distance_m,
-                "layer": _build_reference_layer(ref_locs, prox["reference"]),
+                "layer": None if is_persistent else _build_reference_layer(ref_locs, prox["reference"]),
             }
 
     geojson = rows_to_geojson(
@@ -851,7 +1552,7 @@ async def _filtered_one(dataset_id: str, timeframe: str, community_area: int | N
         gc = _build_geo_clause(geo, ds)
         if gc:
             clauses.append(gc)
-    elif bounds:
+    elif bounds and _dataset_is_spatial(ds):
         b = bounds
         clauses.append(
             f"within_box(location, {b['minLat']}, {b['minLon']}, {b['maxLat']}, {b['maxLon']})"
@@ -924,7 +1625,7 @@ def _view_where(ds: dict, soql_where: str | None, timeframe: str,
         col = (ds.get("geographic_columns") or {}).get("community_area")
         if col:
             clauses.append(f"{col} = '{community_area}'")
-    if bbox:
+    if bbox and _dataset_is_spatial(ds):
         b = bbox
         clauses.append(
             f"within_box(location, {b['minLat']}, {b['minLon']}, {b['maxLat']}, {b['maxLon']})"
@@ -1002,6 +1703,7 @@ def _points_fc(ds: dict, where: str | None, limit: int = 500) -> dict:
     rows = query_dataset(ds["socrata_domain"], ds["socrata_dataset_id"],
                          where=where, limit=limit,
                          order=f"{date_field} DESC" if date_field else None)
+    rows = _normalize_rows_for_dataset(rows, ds)
     return rows_to_geojson(rows, ds,
                            lat_field=ds.get("lat_field", "latitude"),
                            lon_field=ds.get("lon_field", "longitude"))
@@ -1043,6 +1745,7 @@ async def search_records(dataset: str, timeframe: str = "all", community_area: i
         order=order_clause,
         offset=max(offset, 0),
     )
+    rows = _normalize_rows_for_dataset(rows, ds)
     return {"total": total, "columns": ds.get("columns", []), "records": rows}
 
 
@@ -1095,6 +1798,12 @@ async def decide_view(dataset: str, timeframe: str = "all", community_area: int 
 async def smart_search(query: str, bounds: dict | None = None, current_location: dict | None = None) -> dict:
     """Translate natural language → SOQL or MCP call → GeoJSON(s), or fall back to POI geocoding."""
     import asyncio as _asyncio
+    persistent = await _persistent_object_search(query, bounds, current_location)
+    if persistent is not None:
+        persistent["intent"] = "display"
+        print(f"[smart_search] query={query!r} persistent={persistent['meta']['view']['id']} count={len(persistent.get('features', []))}")
+        return persistent
+
     result = await nl_to_soql(query)
     print(f"[smart_search] query={query!r} haiku={result}")
 

@@ -318,15 +318,1049 @@ datasets:
         list: true
         sortOrder: 6
 
-  # Proximity-only datasets: used as spatial anchors in "near X" queries but
-  # not exposed as primary queryable layers in the UI.
+  - id: "business-licenses"
+    displayName: "Business Licenses"
+    socrata_domain: "data.cityofchicago.org"
+    socrata_dataset_id: "uupf-x98q"
+    lat_field: "latitude"
+    lon_field: "longitude"
+    geographic_columns:
+      community_area: "community_area"
+      ward: "ward"
+      zip: "zip_code"
+      police_district: "police_district"
+    proximity:
+      name_field: "doing_business_as_name"
+      limit: 2000
+      aliases:
+        - "business licenses"
+        - "active business licenses"
+        - "licensed businesses"
+        - "businesses"
+        - "license holders"
+    quickSearch:
+      enable: true
+      triggerWord: "license"
+      triggerAlias: "biz"
+      defaultMax: 200
+      defaultSort: '{"date_issued": -1}'
+    options:
+      rendition:
+        icon: "default"
+        color: "#2563EB"
+        fillColor: "#93C5FD"
+        opacity: 85
+        size: 6
+    columns:
+      - id: "doing_business_as_name"
+        displayName: "Business Name"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 1
+        quickSearch: true
+      - id: "legal_name"
+        displayName: "Legal Name"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 2
+        quickSearch: true
+      - id: "license_description"
+        displayName: "License Type"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 3
+        quickSearch: true
+      - id: "business_activity"
+        displayName: "Business Activity"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 4
+        quickSearch: true
+      - id: "license_status"
+        displayName: "License Status"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 5
+      - id: "license_start_date"
+        displayName: "License Start Date"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 6
+        format: "MM/DD/YYYY"
+      - id: "expiration_date"
+        displayName: "Expiration Date"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 7
+        format: "MM/DD/YYYY"
+      - id: "date_issued"
+        displayName: "Date Issued"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 8
+        format: "MM/DD/YYYY"
+      - id: "address"
+        displayName: "Address"
+        dataType: "string"
+        popup: true
+        list: true
+        sortOrder: 9
+      - id: "zip_code"
+        displayName: "ZIP Code"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 10
+      - id: "ward"
+        displayName: "Ward"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 11
+      - id: "community_area_name"
+        displayName: "Community Area"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 12
+      - id: "neighborhood"
+        displayName: "Neighborhood"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 13
+      - id: "license_number"
+        displayName: "License Number"
+        dataType: "number"
+        popup: true
+        list: true
+        sortOrder: 14
+
+  - id: "traffic-crashes"
+    displayName: "Traffic Crashes"
+    showDatasetChiclet: false
+    socrata_domain: "data.cityofchicago.org"
+    socrata_dataset_id: "85ca-t3if"
+    lat_field: "latitude"
+    lon_field: "longitude"
+    geographic_columns:
+      community_area: null
+      ward: null
+      zip: null
+      police_district: null
+    proximity:
+      name_field: "first_crash_type"
+      limit: 2000
+      aliases:
+        - "traffic crashes"
+        - "car crashes"
+        - "vehicle crashes"
+        - "crashes"
+        - "crash reports"
+    quickSearch:
+      enable: true
+      triggerWord: "crash"
+      triggerAlias: "traffic"
+      defaultMax: 200
+      defaultSort: '{"crash_date": -1}'
+    options:
+      rendition:
+        icon: "default"
+        color: "#B45309"
+        fillColor: "#FBBF24"
+        opacity: 85
+        size: 6
+    columns:
+      - id: "crash_date"
+        displayName: "Crash Date"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 1
+        format: "MM/DD/YYYY hh:mm:ss aa"
+      - id: "first_crash_type"
+        displayName: "First Crash Type"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 2
+        quickSearch: true
+      - id: "crash_type"
+        displayName: "Crash Type"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 3
+        quickSearch: true
+      - id: "damage"
+        displayName: "Damage"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 4
+      - id: "most_severe_injury"
+        displayName: "Most Severe Injury"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 5
+      - id: "injuries_total"
+        displayName: "Total Injuries"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 6
+      - id: "prim_contributory_cause"
+        displayName: "Primary Contributory Cause"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 7
+        quickSearch: true
+      - id: "weather_condition"
+        displayName: "Weather"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 8
+      - id: "lighting_condition"
+        displayName: "Lighting"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 9
+      - id: "posted_speed_limit"
+        displayName: "Posted Speed Limit"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 10
+      - id: "street_no"
+        displayName: "Street Number"
+        dataType: "number"
+        popup: true
+        list: true
+        sortOrder: 11
+      - id: "street_direction"
+        displayName: "Direction"
+        dataType: "string"
+        popup: true
+        list: true
+        sortOrder: 12
+      - id: "street_name"
+        displayName: "Street Name"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 13
+        quickSearch: true
+      - id: "num_units"
+        displayName: "Number of Units"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 14
+
+  - id: "building-violations"
+    displayName: "Building Violations"
+    showDatasetChiclet: false
+    socrata_domain: "data.cityofchicago.org"
+    socrata_dataset_id: "22u3-xenr"
+    lat_field: "latitude"
+    lon_field: "longitude"
+    geographic_columns:
+      community_area: null
+      ward: null
+      zip: null
+      police_district: null
+    proximity:
+      name_field: "violation_description"
+      limit: 2000
+      aliases:
+        - "building violations"
+        - "code violations"
+        - "building code violations"
+        - "open building violations"
+        - "failed building inspections"
+    quickSearch:
+      enable: true
+      triggerWord: "violation"
+      triggerAlias: "bv"
+      defaultMax: 200
+      defaultSort: '{"violation_date": -1}'
+    options:
+      rendition:
+        icon: "default"
+        color: "#7F1D1D"
+        fillColor: "#F87171"
+        opacity: 85
+        size: 6
+    columns:
+      - id: "violation_date"
+        displayName: "Violation Date"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 1
+        format: "MM/DD/YYYY"
+      - id: "violation_code"
+        displayName: "Violation Code"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 2
+      - id: "violation_status"
+        displayName: "Violation Status"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 3
+      - id: "violation_description"
+        displayName: "Violation Description"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 4
+        quickSearch: true
+      - id: "violation_location"
+        displayName: "Violation Location"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 5
+      - id: "violation_inspector_comments"
+        displayName: "Inspector Comments"
+        dataType: "string"
+        popup: true
+        list: false
+        sortOrder: 6
+      - id: "violation_ordinance"
+        displayName: "Violation Ordinance"
+        dataType: "string"
+        popup: true
+        list: false
+        sortOrder: 7
+      - id: "inspection_status"
+        displayName: "Inspection Status"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 8
+      - id: "inspection_category"
+        displayName: "Inspection Category"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 9
+      - id: "department_bureau"
+        displayName: "Department Bureau"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 10
+      - id: "address"
+        displayName: "Address"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 11
+        quickSearch: true
+      - id: "property_group"
+        displayName: "Property Group"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 12
+
+  - id: "arrests"
+    displayName: "Arrests"
+    showDatasetChiclet: false
+    spatial: false
+    socrata_domain: "data.cityofchicago.org"
+    socrata_dataset_id: "dpt3-jri9"
+    geographic_columns:
+      community_area: null
+      ward: null
+      zip: null
+      police_district: null
+    quickSearch:
+      enable: true
+      triggerWord: "arrest"
+      triggerAlias: "arr"
+      defaultMax: 200
+      defaultSort: '{"arrest_date": -1}'
+    options:
+      rendition:
+        icon: "default"
+        color: "#1F2937"
+        fillColor: "#9CA3AF"
+        opacity: 85
+        size: 6
+    columns:
+      - id: "arrest_date"
+        displayName: "Arrest Date"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 1
+        format: "MM/DD/YYYY hh:mm:ss aa"
+      - id: "case_number"
+        displayName: "Case Number"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 2
+        quickSearch: true
+      - id: "race"
+        displayName: "Race"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 3
+      - id: "charge_1_description"
+        displayName: "Primary Charge"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 4
+        quickSearch: true
+      - id: "charge_1_statute"
+        displayName: "Primary Statute"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 5
+      - id: "charge_1_type"
+        displayName: "Primary Charge Type"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 6
+      - id: "charge_1_class"
+        displayName: "Primary Charge Class"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 7
+      - id: "charges_description"
+        displayName: "All Charges"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: false
+        sortOrder: 8
+        quickSearch: true
+      - id: "charges_statute"
+        displayName: "All Statutes"
+        dataType: "string"
+        popup: true
+        list: false
+        sortOrder: 9
+      - id: "cb_no"
+        displayName: "CB Number"
+        dataType: "number"
+        popup: true
+        list: false
+        sortOrder: 10
+
+  - id: "city-owned-land"
+    displayName: "City-Owned Land"
+    showDatasetChiclet: false
+    socrata_domain: "data.cityofchicago.org"
+    socrata_dataset_id: "aksk-kvfp"
+    lat_field: "latitude"
+    lon_field: "longitude"
+    geographic_columns:
+      community_area: "community_area_number"
+      ward: "ward"
+      zip: "zip_code"
+      police_district: null
+    proximity:
+      name_field: "address"
+      limit: 2000
+      aliases:
+        - "city-owned land"
+        - "city owned land"
+        - "city land"
+        - "vacant city land"
+        - "land inventory"
+    quickSearch:
+      enable: true
+      triggerWord: "land"
+      triggerAlias: "cityland"
+      defaultMax: 200
+      defaultSort: '{"last_update": -1}'
+    options:
+      rendition:
+        icon: "default"
+        color: "#166534"
+        fillColor: "#86EFAC"
+        opacity: 85
+        size: 6
+    columns:
+      - id: "address"
+        displayName: "Address"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 1
+        quickSearch: true
+      - id: "pin"
+        displayName: "PIN"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 2
+        quickSearch: true
+      - id: "managing_organization"
+        displayName: "Managing Organization"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 3
+      - id: "property_status"
+        displayName: "Property Status"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 4
+      - id: "sales_status"
+        displayName: "Sales Status"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 5
+      - id: "sale_offering_status"
+        displayName: "Sale Offering Status"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 6
+      - id: "sq_ft"
+        displayName: "Sq. Ft."
+        dataType: "number"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 7
+      - id: "square_footage_city_estimate"
+        displayName: "City Sq. Ft. Estimate"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 8
+      - id: "land_value"
+        displayName: "Land Value"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 9
+      - id: "zoning_classification"
+        displayName: "Zoning"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 10
+      - id: "community_area_name"
+        displayName: "Community Area"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 11
+      - id: "ward"
+        displayName: "Ward"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 12
+      - id: "zip_code"
+        displayName: "ZIP Code"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 13
+      - id: "last_update"
+        displayName: "Last Update"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 14
+
+  - id: "towed-vehicles"
+    displayName: "Towed Vehicles"
+    showDatasetChiclet: false
+    spatial: false
+    socrata_domain: "data.cityofchicago.org"
+    socrata_dataset_id: "ygr5-vcbg"
+    geographic_columns:
+      community_area: null
+      ward: null
+      zip: null
+      police_district: null
+    quickSearch:
+      enable: true
+      triggerWord: "towed"
+      triggerAlias: "tow"
+      defaultMax: 200
+      defaultSort: '{"tow_date": -1}'
+    options:
+      rendition:
+        icon: "default"
+        color: "#4C1D95"
+        fillColor: "#C4B5FD"
+        opacity: 85
+        size: 6
+    columns:
+      - id: "tow_date"
+        displayName: "Tow Date"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 1
+        format: "MM/DD/YYYY"
+      - id: "make"
+        displayName: "Make"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 2
+        quickSearch: true
+      - id: "model"
+        displayName: "Model"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 3
+        quickSearch: true
+      - id: "style"
+        displayName: "Style"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 4
+      - id: "color"
+        displayName: "Color"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 5
+      - id: "plate"
+        displayName: "Plate"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 6
+        quickSearch: true
+      - id: "state"
+        displayName: "State"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 7
+      - id: "towed_to_address"
+        displayName: "Towed To"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 8
+        quickSearch: true
+      - id: "tow_facility_phone"
+        displayName: "Tow Facility Phone"
+        dataType: "string"
+        popup: true
+        list: true
+        sortOrder: 9
+      - id: "inventory_number"
+        displayName: "Inventory Number"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 10
+        quickSearch: true
+
+  - id: "sbif-projects"
+    displayName: "Small Business Improvement Funds (SBIF)"
+    socrata_domain: "data.cityofchicago.org"
+    socrata_dataset_id: "etqr-sz5x"
+    lat_field: "latitude"
+    lon_field: "longitude"
+    geographic_columns:
+      community_area: null
+      ward: "ward"
+      zip: null
+      police_district: null
+    proximity:
+      name_field: "project_name"
+      limit: 2000
+      aliases:
+        - "small business improvement funds"
+        - "small business improvement fund"
+        - "SBIF"
+        - "SBIF projects"
+        - "financial incentive projects"
+        - "business improvement grants"
+    quickSearch:
+      enable: true
+      triggerWord: "sbif"
+      triggerAlias: "smallbusiness"
+      defaultMax: 200
+      defaultSort: '{"completion_date": -1}'
+    options:
+      rendition:
+        icon: "default"
+        color: "#0F766E"
+        fillColor: "#5EEAD4"
+        opacity: 85
+        size: 6
+    columns:
+      - id: "project_name"
+        displayName: "Project Name"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 1
+        quickSearch: true
+      - id: "applicant_name"
+        displayName: "Applicant"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 2
+        quickSearch: true
+      - id: "tif_district"
+        displayName: "TIF District"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 3
+        quickSearch: true
+      - id: "community_area"
+        displayName: "Community Area"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 4
+      - id: "ward"
+        displayName: "Ward"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 5
+      - id: "address_number"
+        displayName: "Address Number"
+        dataType: "number"
+        popup: true
+        list: false
+        sortOrder: 6
+      - id: "street_direction"
+        displayName: "Street Direction"
+        dataType: "string"
+        popup: true
+        list: false
+        sortOrder: 7
+      - id: "street_name"
+        displayName: "Street Name"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 8
+      - id: "street_type"
+        displayName: "Street Type"
+        dataType: "string"
+        popup: true
+        list: false
+        sortOrder: 9
+      - id: "approval_date"
+        displayName: "Approval Date"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 10
+        format: "MM/DD/YYYY"
+      - id: "completion_date"
+        displayName: "Completion Date"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 11
+        format: "MM/DD/YYYY"
+      - id: "property_type"
+        displayName: "Property Type"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 12
+      - id: "project_description"
+        displayName: "Project Description"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: false
+        sortOrder: 13
+        quickSearch: true
+      - id: "incentive_amount"
+        displayName: "Incentive Amount"
+        dataType: "float"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 14
+      - id: "total_project_cost"
+        displayName: "Total Project Cost"
+        dataType: "float"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 15
+      - id: "jobs_created_aspirational"
+        displayName: "Jobs Created"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 16
+      - id: "jobs_retained_aspirational"
+        displayName: "Jobs Retained"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 17
+
+  - id: "tif-rda-iga-projects"
+    displayName: "TIF Funded RDA and IGA Projects"
+    socrata_domain: "data.cityofchicago.org"
+    socrata_dataset_id: "mex4-ppfc"
+    lat_field: "latitude"
+    lon_field: "longitude"
+    geographic_columns:
+      community_area: null
+      ward: null
+      zip: null
+      police_district: null
+    proximity:
+      name_field: "project_name"
+      limit: 1000
+      aliases:
+        - "TIF funded RDA and IGA projects"
+        - "TIF RDA IGA projects"
+        - "TIF projects"
+        - "redevelopment agreements"
+        - "intergovernmental agreements"
+        - "RDA projects"
+        - "IGA projects"
+    quickSearch:
+      enable: true
+      triggerWord: "tif"
+      triggerAlias: "rda"
+      defaultMax: 200
+      defaultSort: '{"cdc_date": -1}'
+    options:
+      rendition:
+        icon: "default"
+        color: "#7C3AED"
+        fillColor: "#C4B5FD"
+        opacity: 85
+        size: 6
+    columns:
+      - id: "id"
+        displayName: "Project ID"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 1
+      - id: "project_name"
+        displayName: "Project Name"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 2
+        quickSearch: true
+      - id: "tif_district"
+        displayName: "TIF District"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 3
+        quickSearch: true
+      - id: "address"
+        displayName: "Address"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 4
+        quickSearch: true
+      - id: "developer"
+        displayName: "Developer"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 5
+        quickSearch: true
+      - id: "community_area"
+        displayName: "Community Area"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 6
+      - id: "ward"
+        displayName: "Ward"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 7
+      - id: "project_description"
+        displayName: "Project Description"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: false
+        sortOrder: 8
+        quickSearch: true
+      - id: "cdc_date"
+        displayName: "CDC Date"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 9
+        format: "MM/DD/YYYY"
+      - id: "coc_date"
+        displayName: "Certificate of Completion Date"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 10
+        format: "MM/DD/YYYY"
+      - id: "approved_amount"
+        displayName: "Approved Amount"
+        dataType: "float"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 11
+      - id: "total_project_cost"
+        displayName: "Total Project Cost"
+        dataType: "float"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 12
+      - id: "tif_subsidy_percentage"
+        displayName: "TIF Subsidy Percentage"
+        dataType: "float"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 13
+      - id: "affordable_units"
+        displayName: "Affordable Units"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 14
+
   - id: "schools"
     displayName: "CPS Schools"
-    proximity_only: true
+    showDatasetChiclet: false
     socrata_domain: "data.cityofchicago.org"
-    socrata_dataset_id: "kh4r-387c"
+    socrata_dataset_id: "twrw-chuq"
     lat_field: "school_latitude"
     lon_field: "school_longitude"
+    geographic_columns:
+      community_area: null
+      ward: null
+      zip: "zip"
+      police_district: null
     proximity:
       name_field: "long_name"
       limit: 700
@@ -336,3 +1370,147 @@ datasets:
         - "CPS schools"
         - "Chicago schools"
         - "public schools"
+        - "elementary schools"
+        - "high schools"
+        - "school progress reports"
+    options:
+      rendition:
+        icon: "default"
+        color: "#4D7C0F"
+        fillColor: "#84CC16"
+        opacity: 85
+        size: 6
+    columns:
+      - id: "long_name"
+        displayName: "School"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 1
+        quickSearch: true
+      - id: "short_name"
+        displayName: "Short Name"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 2
+        quickSearch: true
+      - id: "school_type"
+        displayName: "School Type"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 3
+      - id: "primary_category"
+        displayName: "Primary Category"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 4
+      - id: "culture_climate_rating"
+        displayName: "Culture Climate Rating"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 5
+      - id: "student_growth_rating"
+        displayName: "Student Growth Rating"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 6
+      - id: "student_attainment_rating"
+        displayName: "Student Attainment Rating"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 7
+      - id: "school_survey_safety"
+        displayName: "School Survey Safety"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 8
+      - id: "student_attendance_year_2"
+        displayName: "Student Attendance"
+        dataType: "float"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 9
+      - id: "teacher_attendance_avg_pct"
+        displayName: "Teacher Attendance"
+        dataType: "float"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 10
+      - id: "chronic_truancy_pct"
+        displayName: "Chronic Truancy"
+        dataType: "float"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 11
+      - id: "freshmen_on_track_school_1"
+        displayName: "Freshmen On Track"
+        dataType: "float"
+        filter: true
+        popup: true
+        list: false
+        sortOrder: 12
+      - id: "graduation_4_year_school_1"
+        displayName: "4-Year Graduation"
+        dataType: "float"
+        filter: true
+        popup: true
+        list: false
+        sortOrder: 13
+      - id: "college_enrollment_school_1"
+        displayName: "College Enrollment"
+        dataType: "float"
+        filter: true
+        popup: true
+        list: false
+        sortOrder: 14
+      - id: "sat_grade_11_score_school"
+        displayName: "SAT Grade 11 Avg"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: false
+        sortOrder: 15
+      - id: "address"
+        displayName: "Address"
+        dataType: "string"
+        popup: true
+        list: true
+        sortOrder: 16
+      - id: "zip"
+        displayName: "ZIP"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 17
+      - id: "phone"
+        displayName: "Phone"
+        dataType: "string"
+        popup: true
+        list: false
+        sortOrder: 18
+      - id: "progress_report_year"
+        displayName: "Progress Report Year"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: false
+        sortOrder: 19

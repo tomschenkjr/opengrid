@@ -33,7 +33,14 @@ ogrid.DatasetChiclets = ogrid.Class.extend({
         // Use the dataset NAME as the chiclet label — plain words are clearer and
         // more discoverable than icons, which force users to guess what each one
         // means. Styled like the filter chiclets (.ogrid-chiclet > button).
-        var html = (this._options.datasets || []).map(function(d) {
+        var hiddenChiclets = {
+            'schools': true,
+            'sbif-projects': true,
+            'tif-rda-iga-projects': true
+        };
+        var html = (this._options.datasets || []).filter(function(d) {
+            return !hiddenChiclets[d.id] && d.showDatasetChiclet !== false;
+        }).map(function(d) {
             return '<button type="button" class="ogrid-ds-chiclet" data-id="' + d.id + '" ' +
                    'title="' + d.displayName + '">' + d.displayName + '</button>';
         }).join('');

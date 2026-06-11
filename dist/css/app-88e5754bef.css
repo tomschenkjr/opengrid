@@ -198,6 +198,211 @@
 }
 
 
+/* === src/css/community-profile.css === */
+/* =========================================================================
+   Community Trends — community profile page (#ogrid-community-profile).
+   A full-content dashboard overlay shown when the "trends" section is active.
+   Reuses the redesign.css design tokens (--accent, --ink, --muted, --line).
+   ========================================================================= */
+
+#ogrid-community-profile {
+  position: fixed;
+  left: var(--rail-w); top: 0; right: 0; bottom: 0;
+  background: #f5f6f8;
+  z-index: 3000;
+  overflow-y: auto;
+}
+#ogrid-community-profile.hide { display: none; }
+/* In the trends section the narrow placeholder is suppressed in favor of this page */
+#ogrid-container.viewing-section #ogrid-community-profile:not(.hide) ~ #ogrid-section-placeholder {
+  display: none !important;
+}
+
+.ocp-page { max-width: 1120px; margin: 0 auto; padding: 28px 32px 48px; }
+
+/* --- Header + area picker ------------------------------------------------ */
+.ocp-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; margin-bottom: 20px;
+}
+.ocp-title { font-size: 20px; font-weight: 800; color: var(--ink); }
+.ocp-title .fa { color: var(--accent); margin-right: 8px; }
+.ocp-area-picker { display: flex; align-items: center; gap: 8px; }
+.ocp-area-picker label { font-size: 12px; color: var(--muted); font-weight: 600; }
+.ocp-area-select {
+  border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px;
+  font-size: 14px; color: var(--ink); background: #fff; min-width: 200px;
+}
+.ocp-area-select:focus { outline: none; border-color: var(--accent); }
+
+.ocp-empty, .ocp-loading { color: var(--muted); padding: 40px 4px; font-size: 14px; }
+.ocp-loading .fa { margin-right: 8px; color: var(--accent); }
+
+.ocp-area-head { margin-bottom: 18px; }
+.ocp-area-name { font-size: 26px; font-weight: 800; color: var(--ink); }
+.ocp-area-meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+/* --- Summary + area outline --------------------------------------------- */
+.ocp-overview-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px;
+  gap: 16px;
+  margin-bottom: 18px;
+  align-items: stretch;
+}
+.ocp-summary-card,
+.ocp-boundary-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+.ocp-summary-card {
+  border-color: rgba(48, 113, 193, 0.55);
+  background: #eaf3ff;
+  padding: 16px 18px;
+}
+.ocp-summary-title { font-size: 16px; font-weight: 800; color: var(--ink); }
+.ocp-summary-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.ocp-ai-summary {
+  margin-top: 14px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink);
+  max-width: 820px;
+}
+.ocp-ai-summary p { margin: 0 0 10px; }
+.ocp-ai-summary p:last-child { margin-bottom: 0; }
+.ocp-ai-summary .fa { color: var(--accent); margin-right: 8px; }
+.ocp-boundary-card {
+  min-height: 158px;
+  padding: 12px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.ocp-boundary-map {
+  position: relative;
+  width: 100%;
+  height: 128px;
+  overflow: hidden;
+  border: 1px solid rgba(47, 119, 190, 0.22);
+  border-radius: 10px;
+  background: #e8eef5;
+  pointer-events: none;
+}
+.ocp-boundary-map .leaflet-container {
+  background: #e8eef5;
+}
+.ocp-boundary-map .leaflet-tile-pane {
+  filter: saturate(0.9) contrast(0.98);
+}
+.ocp-boundary-map .leaflet-control-container {
+  display: none;
+}
+.ocp-boundary-label {
+  margin-top: 2px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+.ocp-boundary-empty {
+  min-height: 128px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* --- KPI cards ----------------------------------------------------------- */
+.ocp-kpi-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px;
+}
+.ocp-kpi-card {
+  background: #fff; border: 1px solid var(--line); border-radius: 14px;
+  padding: 18px 18px 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+.ocp-kpi-label {
+  font-size: 12px; color: var(--muted); font-weight: 600;
+  text-transform: uppercase; letter-spacing: .03em;
+}
+.ocp-kpi-value { font-size: 30px; font-weight: 800; color: var(--ink); margin-top: 8px; }
+.ocp-kpi-context { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+/* ===================== Sectioned report (Census-style) ================== */
+.ocp-section {
+  display: flex; background: #fff; border: 1px solid var(--line);
+  border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  margin-bottom: 18px; overflow: hidden;
+}
+.ocp-section-rail {
+  flex: 0 0 150px; background: #f3f5f7; border-right: 1px solid var(--line);
+  padding: 18px 16px;
+}
+.ocp-section-rail span {
+  position: sticky; top: 16px; display: block;
+  font-size: 15px; font-weight: 800; color: var(--ink);
+}
+.ocp-section-content { flex: 1 1 auto; min-width: 0; padding: 4px 22px 14px; }
+
+.ocp-group { padding: 16px 0; border-bottom: 1px solid var(--line); }
+.ocp-group:last-child { border-bottom: 0; }
+.ocp-group-title { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 14px; }
+.ocp-group-items { display: flex; flex-wrap: wrap; gap: 26px; align-items: flex-start; }
+
+.ocp-item { min-width: 0; }
+
+/* Stat blocks */
+.ocp-stat { flex: 0 0 auto; min-width: 150px; padding-top: 2px; }
+.ocp-stat-value { font-size: 30px; font-weight: 800; color: var(--ink); line-height: 1.1; }
+.ocp-stat-unit { font-size: 14px; font-weight: 600; color: var(--muted); }
+.ocp-stat-label { font-size: 13px; color: var(--muted); margin-top: 4px; max-width: 210px; }
+
+/* Chart blocks */
+.ocp-chart { flex: 1 1 300px; max-width: 560px; }
+.ocp-item-label { font-size: 12px; font-weight: 700; color: var(--ink); margin-bottom: 8px; }
+.ocp-canvas-wrap { position: relative; height: 210px; }
+.ocp-canvas-wrap canvas { max-width: 100%; }
+
+/* --- Map: clickable community-area name labels --------------------------- */
+/* The divIcon root is a 0×0 point at the centroid; the inner text is centered
+   on it via transform and is the only clickable target (no polygon). */
+.ocp-map-label { background: transparent; border: 0; box-shadow: none; }
+.ocp-map-label .ocp-label-text {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--ink);
+  text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff,
+               0 0 5px rgba(255,255,255,0.9);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: font-size .12s ease, color .12s ease;
+}
+.ocp-map-label .ocp-label-text:hover { color: var(--accent); }
+
+/* --- Responsive ---------------------------------------------------------- */
+@media (max-width: 880px) {
+  .ocp-overview-row { grid-template-columns: 1fr; }
+  .ocp-boundary-card { min-height: 150px; }
+  .ocp-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .ocp-page { padding: 20px 18px 40px; }
+  .ocp-section { flex-direction: column; }
+  .ocp-section-rail {
+    flex: 0 0 auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 12px 16px;
+  }
+  .ocp-section-rail span { position: static; }
+  .ocp-chart { flex-basis: 100%; max-width: 100%; }
+}
+@media (max-width: 520px) {
+  .ocp-kpi-grid { grid-template-columns: 1fr; }
+}
+
+
 /* === src/css/ogrid-theme-orig.css === */
 
 
@@ -1015,11 +1220,29 @@ h6 > a {
 
 /* Expanded: wider rail with text labels beside the icons */
 #ogrid-sidebar.expanded { width: 220px; }
-#ogrid-sidebar.expanded .ogrid-nav-item a {
-  flex-direction: row; justify-content: flex-start; gap: 14px;
-  padding: 14px 20px; font-size: 13px; text-align: left;
+#ogrid-sidebar.expanded #ogrid-hamburger {
+  display: flex; align-items: center; justify-content: flex-start;
+  padding: 0 18px; text-align: left;
 }
-#ogrid-sidebar.expanded .ogrid-nav-item a span { display: inline; }
+#ogrid-sidebar.expanded #ogrid-hamburger .fa {
+  width: 36px; height: 36px; display: inline-flex;
+  align-items: center; justify-content: center;
+}
+#ogrid-sidebar.expanded .ogrid-nav-item a {
+  flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px;
+  padding: 10px 18px; font-size: 13px; text-align: left;
+}
+#ogrid-sidebar.expanded .ogrid-nav-item a .fa {
+  flex: 0 0 36px; width: 36px; height: 36px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+#ogrid-sidebar.expanded .ogrid-nav-item.active a .fa {
+  padding: 0;
+}
+#ogrid-sidebar.expanded .ogrid-nav-item a span {
+  display: inline; flex: 1 1 auto; min-width: 0;
+  text-align: left; line-height: 1.2;
+}
 
 /* ========================== Floating search ============================= */
 #ogrid-search-float {
@@ -1028,6 +1251,7 @@ h6 > a {
   z-index: 3500; transition: left .25s ease;
   display: flex; align-items: center; gap: 10px;
 }
+#ogrid-container.viewing-community-trends #ogrid-search-float { display: none; }
 /* Search has its own fixed width so the Summarize morph never resizes it */
 #ogrid-search-float #ogrid-search {
   flex: 0 0 auto; width: 520px !important; margin: 0 !important; min-width: 0;
@@ -1236,6 +1460,119 @@ h6 > a {
 }
 .ogrid-result-card .rc-sub { color: var(--muted); font-size: 12px; margin-top: 6px; }
 
+.ogrid-result-card.ogrid-divvy-result-card .rc-top {
+  display: block;
+}
+
+.ogrid-result-card.ogrid-divvy-result-card .rc-title {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ogrid-divvy-pill-row {
+  margin-top: 7px;
+  max-width: 100%;
+}
+
+.ogrid-result-card.ogrid-divvy-result-card .ogrid-divvy-pill {
+  box-sizing: border-box;
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  max-width: min(220px, 100%);
+  white-space: normal;
+  line-height: 1.25;
+  text-align: left;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.ogrid-openair-marker {
+  background: transparent;
+  border: none;
+}
+
+.ogrid-openair-icon-wrap {
+  width: 20px;
+  height: 20px;
+  background: #22c55e;
+  border: 2px solid #ecf0f1;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+.ogrid-openair-icon-wrap .fa {
+  color: #ecf0f1;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.ogrid-openair-icon-wrap .fa-smog:before {
+  content: "\f0c2";
+}
+
+.ogrid-result-card.ogrid-openair-result-card {
+  cursor: default;
+}
+
+.ogrid-result-card.ogrid-openair-result-card .rc-pill {
+  flex: 0 0 auto;
+}
+
+.oa-chart-wrap {
+  height: 76px;
+  margin-top: 10px;
+}
+
+.oa-chart-empty {
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.oa-trend-label {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 3px;
+}
+
+.oa-metrics {
+  margin-top: 10px;
+}
+
+.oa-metric-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 0;
+  border-top: 1px solid #edf0f4;
+}
+
+.oa-metric-label {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.oa-metric-value {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+
 /* Expand/collapse details */
 .ogrid-result-card .rc-toggle {
   border: 0; background: transparent; color: var(--muted); cursor: pointer;
@@ -1256,6 +1593,50 @@ h6 > a {
 .ogrid-result-card .rc-row .rc-k { color: var(--muted); font-weight: 600; flex: 0 0 auto; }
 .ogrid-result-card .rc-row .rc-v { color: var(--ink); text-align: right; word-break: break-word; }
 .ogrid-empty { color: var(--muted); text-align: center; padding: 30px 10px; }
+
+/* Street View images inside Leaflet popups */
+.ogrid-streetview-leaflet-popup .leaflet-popup-content {
+  margin: 12px;
+  width: 320px !important;
+}
+.ogrid-streetview-popup {
+  color: var(--ink);
+  line-height: 1.35;
+}
+.ogrid-streetview-title {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.ogrid-streetview {
+  width: 320px;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #eef2f6;
+  border: 1px solid #d7dee8;
+}
+.ogrid-streetview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ogrid-streetview-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+.ogrid-streetview-popup .ogrid-popup-fields {
+  margin-top: 10px;
+}
 
 /* Section placeholder (Place Profile / Trends / Announcements) */
 #ogrid-section-placeholder {

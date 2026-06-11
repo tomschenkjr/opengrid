@@ -68,10 +68,18 @@ ogrid.Config = {
     },
 
     map: {
+        googleStreetViewApiKey: '',
+        googleStreetView: {
+            size: '320x180',
+            fov: 80,
+            pitch: 0,
+            radius: 50
+        },
+
         //first base layer becomes base layer selected by default
        baseLayers:[{
             name: 'Streets',
-            url:'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+            url:'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',
 			useEsri: false,
             options: {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',

@@ -57,7 +57,17 @@
                 permanent: true, direction: 'right',
                 className: 'ogrid-beach-label', offset: [4, 0]
             });
+        if (ogrid.StreetView) {
+            ogrid.StreetView.attachToMarker(marker, {
+                lat: b.latitude,
+                lon: b.longitude,
+                title: b.beach + ' Water Quality Tests'
+            });
+        }
         marker.on('click', function() {
+            if (ogrid.StreetView) {
+                ogrid.StreetView.openMarkerPopup(marker);
+            }
             if (ogrid.App && ogrid.App._rp && ogrid.App._rp.showStationContent) {
                 ogrid.App._rp.showStationContent({ title: b.beach + ' Water Quality Tests', html: _popupHtml(b) });
             }

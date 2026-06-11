@@ -114,7 +114,17 @@
                 permanent: true, direction: 'right',
                 className: 'ogrid-bweather-label', offset: [4, 0]
             });
+        if (ogrid.StreetView) {
+            ogrid.StreetView.attachToMarker(marker, {
+                lat: st.latitude,
+                lon: st.longitude,
+                title: _label(st.station_name)
+            });
+        }
         marker.on('click', function() {
+            if (ogrid.StreetView) {
+                ogrid.StreetView.openMarkerPopup(marker);
+            }
             if (ogrid.App && ogrid.App._rp && ogrid.App._rp.showStationContent) {
                 ogrid.App._rp.showStationContent({ title: _label(st.station_name), html: _popupHtml(st) });
             }
