@@ -1,0 +1,557 @@
+{
+  "/Users/tomschenkjr/git/opengrid/src/images/favicon/manifest.json": {
+    "mtime": 1780501410.5214636,
+    "ast_hash": "b58fcfa7628c9205cb11a1b2c3e8f99a",
+    "semantic_hash": "b58fcfa7628c9205cb11a1b2c3e8f99a"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/core/Class.js": {
+    "mtime": 1780501410.5220687,
+    "ast_hash": "e742a35887456978324c2412bc624e5f",
+    "semantic_hash": "e742a35887456978324c2412bc624e5f"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/core/Empty.js": {
+    "mtime": 1780501410.5221379,
+    "ast_hash": "6b8b635fc793eb8f211117a9c76beb0a",
+    "semantic_hash": "6b8b635fc793eb8f211117a9c76beb0a"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/core/Event.js": {
+    "mtime": 1780855158.5443563,
+    "ast_hash": "d233aa3bc5592e62290e95cc99e718b0",
+    "semantic_hash": "d233aa3bc5592e62290e95cc99e718b0"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/core/QSearchProcessor.js": {
+    "mtime": 1780501410.5222745,
+    "ast_hash": "2ba6a28e8e53d44effd156fa26aa92c8",
+    "semantic_hash": "2ba6a28e8e53d44effd156fa26aa92c8"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/core/Util.js": {
+    "mtime": 1780501410.5223877,
+    "ast_hash": "db7401267b006b4b287beda5847fbe3e",
+    "semantic_hash": "db7401267b006b4b287beda5847fbe3e"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/Config.js": {
+    "mtime": 1781108155.0551987,
+    "ast_hash": "93bfffc08938e4835d1cfe88ed7b9339",
+    "semantic_hash": "93bfffc08938e4835d1cfe88ed7b9339"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/StreetView.js": {
+    "mtime": 1781108174.3146312,
+    "ast_hash": "e025c54f8d593664daef3ab6feca485c",
+    "semantic_hash": "e025c54f8d593664daef3ab6feca485c"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/community/CommunityAreaLabels.js": {
+    "mtime": 1780977380.9013534,
+    "ast_hash": "464032ef34c96f2333b429fce13031b5",
+    "semantic_hash": "464032ef34c96f2333b429fce13031b5"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/community/CommunityProfile.js": {
+    "mtime": 1781153370.1443734,
+    "ast_hash": "a0b20ace8ae011ceef21ffcde4fde08b",
+    "semantic_hash": "a0b20ace8ae011ceef21ffcde4fde08b"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/community/ProfileCharts.js": {
+    "mtime": 1781127044.4982407,
+    "ast_hash": "ce0b6e43db80cd618cf868813ac936c4",
+    "semantic_hash": "ce0b6e43db80cd618cf868813ac936c4"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/data/ChicagoCityShapeMap.js": {
+    "mtime": 1780501410.5226269,
+    "ast_hash": "36d458cb9c403c7a8af29e4f54131f67",
+    "semantic_hash": "36d458cb9c403c7a8af29e4f54131f67"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/data/ChicagoWardsShapeMap.js": {
+    "mtime": 1780501410.522773,
+    "ast_hash": "e368115f7e890d55a5bea71805640dec",
+    "semantic_hash": "e368115f7e890d55a5bea71805640dec"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/data/ChicagoZipShapeMap.js": {
+    "mtime": 1780501410.522969,
+    "ast_hash": "d83a7a1b459d196e274cac8011dabdb0",
+    "semantic_hash": "d83a7a1b459d196e274cac8011dabdb0"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/events/AnnouncementsPage.js": {
+    "mtime": 1781203082.1001046,
+    "ast_hash": "efa9d24deb962316346e970b32ca2376",
+    "semantic_hash": "efa9d24deb962316346e970b32ca2376"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/ext/leaflet-pdf.js": {
+    "mtime": 1780501410.5231187,
+    "ast_hash": "fc704dba48ea7d7a96b73a7137ab3930",
+    "semantic_hash": "fc704dba48ea7d7a96b73a7137ab3930"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/ext/ogrid-bootstrap-table-graph.js": {
+    "mtime": 1780501410.5232081,
+    "ast_hash": "e7d1d8f17be82d99adc548ceb18bdd36",
+    "semantic_hash": "e7d1d8f17be82d99adc548ceb18bdd36"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/ext/ogrid-bootstrap-table-heatmap.js": {
+    "mtime": 1780501410.5232978,
+    "ast_hash": "e9c7e3855972a1f0f365863dcb272457",
+    "semantic_hash": "e9c7e3855972a1f0f365863dcb272457"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/ext/ogrid-bootstrap-table-refresh.js": {
+    "mtime": 1780501410.5233722,
+    "ast_hash": "e2300728711e17110e7d44294554765a",
+    "semantic_hash": "e2300728711e17110e7d44294554765a"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/ext/ogrid-bootstrap-table-tilemap.js": {
+    "mtime": 1780501410.5234659,
+    "ast_hash": "be33cf951a3f72fa7945cad06f327879",
+    "semantic_hash": "be33cf951a3f72fa7945cad06f327879"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/qsearch/AISearch.js": {
+    "mtime": 1780622922.4848058,
+    "ast_hash": "84d456ba9140f319b4bb9129babaf0ce",
+    "semantic_hash": "84d456ba9140f319b4bb9129babaf0ce"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/qsearch/FlexData.js": {
+    "mtime": 1780501410.5236094,
+    "ast_hash": "7468f6f1cbf8b6b1896556dcef43fe94",
+    "semantic_hash": "7468f6f1cbf8b6b1896556dcef43fe94"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/qsearch/FlexSearchBuilder.js": {
+    "mtime": 1780501410.5237265,
+    "ast_hash": "148730adbe221650d4f78a2d85440f13",
+    "semantic_hash": "148730adbe221650d4f78a2d85440f13"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/qsearch/LatLng.js": {
+    "mtime": 1780501410.5238008,
+    "ast_hash": "a31494d3c7b8a0fca2724f0912defe6a",
+    "semantic_hash": "a31494d3c7b8a0fca2724f0912defe6a"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/qsearch/Place.js": {
+    "mtime": 1780501410.523907,
+    "ast_hash": "b4d38f8d56e16e2a45b2fb46f5fef086",
+    "semantic_hash": "b4d38f8d56e16e2a45b2fb46f5fef086"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/qsearch/Tweet.js": {
+    "mtime": 1780501410.5239985,
+    "ast_hash": "ef92a1110fe966f4269f1799d7461392",
+    "semantic_hash": "ef92a1110fe966f4269f1799d7461392"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/qsearch/Weather.js": {
+    "mtime": 1780501410.5240843,
+    "ast_hash": "3d7059a077fbec7c11ff86d2f36d899c",
+    "semantic_hash": "3d7059a077fbec7c11ff86d2f36d899c"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/service/TemplateServiceErrorHandler.js": {
+    "mtime": 1780501410.5242112,
+    "ast_hash": "06c239fefdea371cfa39b89a0f8a0b65",
+    "semantic_hash": "06c239fefdea371cfa39b89a0f8a0b65"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/stations/BeachStations.js": {
+    "mtime": 1781108260.0498433,
+    "ast_hash": "a499d7a18a730c4376cd1847552c44d1",
+    "semantic_hash": "a499d7a18a730c4376cd1847552c44d1"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/stations/BeachWeatherStations.js": {
+    "mtime": 1781108268.423721,
+    "ast_hash": "cc00a75c0a3ea815673e849ede8bfb5d",
+    "semantic_hash": "cc00a75c0a3ea815673e849ede8bfb5d"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/stations/BusLayer.js": {
+    "mtime": 1781108219.4414165,
+    "ast_hash": "a852f986aae0d84c2a42874ca183b3e6",
+    "semantic_hash": "a852f986aae0d84c2a42874ca183b3e6"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/stations/CTALayer.js": {
+    "mtime": 1781108243.9722016,
+    "ast_hash": "1010dd3bea5ed1b2aafef33bb1a2ff55",
+    "semantic_hash": "1010dd3bea5ed1b2aafef33bb1a2ff55"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/stations/CivicFacilitiesLayer.js": {
+    "mtime": 1781190078.4342647,
+    "ast_hash": "a2d88eb3b613f67ba56191f5d7d7cf6b",
+    "semantic_hash": "a2d88eb3b613f67ba56191f5d7d7cf6b"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/stations/DivvyLayer.js": {
+    "mtime": 1781108224.7860703,
+    "ast_hash": "837bf9fa1a4af571b02a1bd6c4a2d04c",
+    "semantic_hash": "837bf9fa1a4af571b02a1bd6c4a2d04c"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/stations/MetraLayer.js": {
+    "mtime": 1781108237.6741822,
+    "ast_hash": "2b1902d5d12aaca6957a3344a7eda7d2",
+    "semantic_hash": "2b1902d5d12aaca6957a3344a7eda7d2"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/stations/OpenAirLayer.js": {
+    "mtime": 1781108250.3237267,
+    "ast_hash": "f874d5925a1a59ae1afa40c5fb5d1a56",
+    "semantic_hash": "f874d5925a1a59ae1afa40c5fb5d1a56"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/stations/ParkLayer.js": {
+    "mtime": 1781184958.057075,
+    "ast_hash": "5b22e2c62097c21a7fe710a67c215f83",
+    "semantic_hash": "5b22e2c62097c21a7fe710a67c215f83"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/stations/SchoolLayer.js": {
+    "mtime": 1781190024.4837408,
+    "ast_hash": "437eaaf3fcf40179308412a905aaaa84",
+    "semantic_hash": "437eaaf3fcf40179308412a905aaaa84"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/custom/stations/WebcamLayer.js": {
+    "mtime": 1781122081.9164011,
+    "ast_hash": "25665dd5021d7fd98dac207e7fad148b",
+    "semantic_hash": "25665dd5021d7fd98dac207e7fad148b"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/data/Admin.js": {
+    "mtime": 1780501410.524369,
+    "ast_hash": "d4bbdd7fd7e580ba71a301565227a00d",
+    "semantic_hash": "d4bbdd7fd7e580ba71a301565227a00d"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/data/Mock.js": {
+    "mtime": 1780501410.5244644,
+    "ast_hash": "a9bc3a0651f4e9fcc50542c904638dce",
+    "semantic_hash": "a9bc3a0651f4e9fcc50542c904638dce"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/data/Search.js": {
+    "mtime": 1780501410.5245776,
+    "ast_hash": "342233bf82ab8845265731b3f0e68210",
+    "semantic_hash": "342233bf82ab8845265731b3f0e68210"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/data/ShapeMap.js": {
+    "mtime": 1780501410.524638,
+    "ast_hash": "2c6beba264b9181a92f18a8250a25b2f",
+    "semantic_hash": "2c6beba264b9181a92f18a8250a25b2f"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ogrid.js": {
+    "mtime": 1780501410.5247076,
+    "ast_hash": "d99c8c4b153653674ff30af35afe5720",
+    "semantic_hash": "d99c8c4b153653674ff30af35afe5720"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/session/Session.js": {
+    "mtime": 1780501410.5248563,
+    "ast_hash": "bd5026135c7decaab1b28b03ae908d0b",
+    "semantic_hash": "bd5026135c7decaab1b28b03ae908d0b"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/session/TokenStorage.js": {
+    "mtime": 1780501410.5249238,
+    "ast_hash": "d4b5dc60a0b10a85a182e9f785d4b8f7",
+    "semantic_hash": "d4b5dc60a0b10a85a182e9f785d4b8f7"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/session/User.js": {
+    "mtime": 1780501410.524986,
+    "ast_hash": "cfb0e6efa3d4ad0dbabf57dac1aa3707",
+    "semantic_hash": "cfb0e6efa3d4ad0dbabf57dac1aa3707"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/util/QueryScheduler.js": {
+    "mtime": 1780501410.5251195,
+    "ast_hash": "9fd7005deb72ba8de62eb594b7ca8824",
+    "semantic_hash": "9fd7005deb72ba8de62eb594b7ca8824"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/util/service/BaseServiceErrorHandler.js": {
+    "mtime": 1780501410.5252264,
+    "ast_hash": "69b3b933c5543c7790aadb3ef47de822",
+    "semantic_hash": "69b3b933c5543c7790aadb3ef47de822"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/AdvancedSearch.js": {
+    "mtime": 1780501410.5254557,
+    "ast_hash": "3c9aa2ec83737be0b94573a8ece6ea2e",
+    "semantic_hash": "3c9aa2ec83737be0b94573a8ece6ea2e"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/Alert.js": {
+    "mtime": 1780501410.5255494,
+    "ast_hash": "0a2951f2fad458157195950b0051a0ed",
+    "semantic_hash": "0a2951f2fad458157195950b0051a0ed"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/CommandBar.js": {
+    "mtime": 1780603102.1338124,
+    "ast_hash": "5b3b15fa9a3003e9799474d70607eaf6",
+    "semantic_hash": "5b3b15fa9a3003e9799474d70607eaf6"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/DatasetChiclets.js": {
+    "mtime": 1781150375.9906263,
+    "ast_hash": "7155748bef744272162fefa7213fb3e3",
+    "semantic_hash": "7155748bef744272162fefa7213fb3e3"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/FilterBar.js": {
+    "mtime": 1780855158.545262,
+    "ast_hash": "f986af97692ac307a077b101f8f4d162",
+    "semantic_hash": "f986af97692ac307a077b101f8f4d162"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/Main.js": {
+    "mtime": 1781189223.7211378,
+    "ast_hash": "45d323d60c11e7dcd93c62e394d75648",
+    "semantic_hash": "45d323d60c11e7dcd93c62e394d75648"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/Map.js": {
+    "mtime": 1781108203.6308906,
+    "ast_hash": "b7016099c0fcb7f550c1d3e1cc56cad2",
+    "semantic_hash": "b7016099c0fcb7f550c1d3e1cc56cad2"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/MapMode.js": {
+    "mtime": 1780855158.5459423,
+    "ast_hash": "cf8d24c7dfc2b2685bfab6bc9a0af745",
+    "semantic_hash": "cf8d24c7dfc2b2685bfab6bc9a0af745"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/QSearch.js": {
+    "mtime": 1780855158.5461109,
+    "ast_hash": "e6f5cf57aebd0a3661b579f712a0901f",
+    "semantic_hash": "e6f5cf57aebd0a3661b579f712a0901f"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/QSearchFactory.js": {
+    "mtime": 1780501410.5261817,
+    "ast_hash": "d9b673bff24353ea6a4d61110d3ba5dd",
+    "semantic_hash": "d9b673bff24353ea6a4d61110d3ba5dd"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/ResultsPanel.js": {
+    "mtime": 1781189257.7322443,
+    "ast_hash": "08cb6cf9935f920bdb833ce1c24a965e",
+    "semantic_hash": "08cb6cf9935f920bdb833ce1c24a965e"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/Sidebar.js": {
+    "mtime": 1781189247.3755267,
+    "ast_hash": "4cb2eac2fd4b685c230087f0f7a1825e",
+    "semantic_hash": "4cb2eac2fd4b685c230087f0f7a1825e"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/TableView.js": {
+    "mtime": 1780501410.526305,
+    "ast_hash": "f486587a2b947189c3d2e6adba25faf9",
+    "semantic_hash": "f486587a2b947189c3d2e6adba25faf9"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/TileMapByBoundary.js": {
+    "mtime": 1780501410.526435,
+    "ast_hash": "8a4e7774e5119da789f1035e4906b456",
+    "semantic_hash": "8a4e7774e5119da789f1035e4906b456"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/chart/Chart.js": {
+    "mtime": 1780501410.5265653,
+    "ast_hash": "04a436834dcf304d841e91f5728a7676",
+    "semantic_hash": "04a436834dcf304d841e91f5728a7676"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/geofilter/BaseGeoFilter.js": {
+    "mtime": 1780501410.526688,
+    "ast_hash": "f91d1975c504184d7d40b6e9afcf0c0b",
+    "semantic_hash": "f91d1975c504184d7d40b6e9afcf0c0b"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/geofilter/DrawnGeoFilter.js": {
+    "mtime": 1780501410.5267687,
+    "ast_hash": "efe17e5d489553a13ee1839c43083881",
+    "semantic_hash": "efe17e5d489553a13ee1839c43083881"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/geofilter/GeoFilter.js": {
+    "mtime": 1780501410.5268815,
+    "ast_hash": "ad75263b96b83bb405a4e467a90e2e92",
+    "semantic_hash": "ad75263b96b83bb405a4e467a90e2e92"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/geofilter/GeoFilterFactory.js": {
+    "mtime": 1780501410.5269578,
+    "ast_hash": "16335f457b44bad7ea89e700751600a1",
+    "semantic_hash": "16335f457b44bad7ea89e700751600a1"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/geofilter/GeoLocationGeoFilter.js": {
+    "mtime": 1780501410.5270262,
+    "ast_hash": "54f8eb2e8f62c255473cdef69273223b",
+    "semantic_hash": "54f8eb2e8f62c255473cdef69273223b"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/geofilter/MapExtentGeoFilter.js": {
+    "mtime": 1780501410.5271032,
+    "ast_hash": "eb20af599000518df66acc615691898f",
+    "semantic_hash": "eb20af599000518df66acc615691898f"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/geofilter/PointGeoFilter.js": {
+    "mtime": 1780501410.5271971,
+    "ast_hash": "776c41afcad0703dad4abebfb7bfaa89",
+    "semantic_hash": "776c41afcad0703dad4abebfb7bfaa89"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/geofilter/ShapeGeoFilter.js": {
+    "mtime": 1780501410.5272756,
+    "ast_hash": "4fee9b1ab578b32012dfb96cd34f7512",
+    "semantic_hash": "4fee9b1ab578b32012dfb96cd34f7512"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/manage/AdminUI.js": {
+    "mtime": 1780501410.5273814,
+    "ast_hash": "c788a679e56480cb67afd78e7efc3a0c",
+    "semantic_hash": "c788a679e56480cb67afd78e7efc3a0c"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/manage/EntityAdmin.js": {
+    "mtime": 1780501410.5274472,
+    "ast_hash": "257445d7eacad137c8c612cadb9f0192",
+    "semantic_hash": "257445d7eacad137c8c612cadb9f0192"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/manage/GroupAdmin.js": {
+    "mtime": 1780501410.5276005,
+    "ast_hash": "bef2515c02517657c72ab0e817af9f82",
+    "semantic_hash": "bef2515c02517657c72ab0e817af9f82"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/manage/QueryAdmin.js": {
+    "mtime": 1780501410.527692,
+    "ast_hash": "681edbaede7638cbdf8d7554fc3f25e8",
+    "semantic_hash": "681edbaede7638cbdf8d7554fc3f25e8"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/manage/SecuredFunctions.js": {
+    "mtime": 1780501410.5277464,
+    "ast_hash": "66fd6d1bbb35ac5f622dee8e70be16f6",
+    "semantic_hash": "66fd6d1bbb35ac5f622dee8e70be16f6"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/js/ux/manage/UserAdmin.js": {
+    "mtime": 1780501410.5278404,
+    "ast_hash": "99f5e48d3b8b2e972540b1c405a8acdd",
+    "semantic_hash": "99f5e48d3b8b2e972540b1c405a8acdd"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/main.py": {
+    "mtime": 1781189190.7171848,
+    "ast_hash": "3fa6816b61b61029e21f0c80d4d66618",
+    "semantic_hash": "3fa6816b61b61029e21f0c80d4d66618"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/providers/__init__.py": {
+    "mtime": 1780855158.5411837,
+    "ast_hash": "d41d8cd98f00b204e9800998ecf8427e",
+    "semantic_hash": "d41d8cd98f00b204e9800998ecf8427e"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/providers/base.py": {
+    "mtime": 1780855158.5413241,
+    "ast_hash": "aefd89affc37f0d216ade3a845846800",
+    "semantic_hash": "aefd89affc37f0d216ade3a845846800"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/providers/mcp_http.py": {
+    "mtime": 1780855158.541438,
+    "ast_hash": "2ffa369f75337e5ae158e36f3c4531c0",
+    "semantic_hash": "2ffa369f75337e5ae158e36f3c4531c0"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/routers/auth.py": {
+    "mtime": 1780518955.0836937,
+    "ast_hash": "ad019208517233f943d88358c40bd618",
+    "semantic_hash": "ad019208517233f943d88358c40bd618"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/routers/capabilities.py": {
+    "mtime": 1780506946.754627,
+    "ast_hash": "ab82c330ee8d0a33b0c32c26f84c5f04",
+    "semantic_hash": "ab82c330ee8d0a33b0c32c26f84c5f04"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/routers/community_profile.py": {
+    "mtime": 1781152907.7281172,
+    "ast_hash": "473fb26ea4163e09dcbf3d2b8dd3c998",
+    "semantic_hash": "473fb26ea4163e09dcbf3d2b8dd3c998"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/routers/datasets.py": {
+    "mtime": 1780602458.0712392,
+    "ast_hash": "20b4197930f86e91f33b78c62b3a7757",
+    "semantic_hash": "20b4197930f86e91f33b78c62b3a7757"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/routers/events.py": {
+    "mtime": 1781189670.578685,
+    "ast_hash": "8ef7ff9d16b986a78c6848ddc88d74ac",
+    "semantic_hash": "8ef7ff9d16b986a78c6848ddc88d74ac"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/routers/geography.py": {
+    "mtime": 1780855158.541703,
+    "ast_hash": "7234abccb6af5179840a3a1106348aa8",
+    "semantic_hash": "7234abccb6af5179840a3a1106348aa8"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/routers/map.py": {
+    "mtime": 1780855158.5418117,
+    "ast_hash": "14a2563b3c60caa6589fa12d06dfcd40",
+    "semantic_hash": "14a2563b3c60caa6589fa12d06dfcd40"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/routers/queries.py": {
+    "mtime": 1780519045.9260018,
+    "ast_hash": "9c037f1da4d57627a1d54f5da087b869",
+    "semantic_hash": "9c037f1da4d57627a1d54f5da087b869"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/routers/search.py": {
+    "mtime": 1780855158.5419664,
+    "ast_hash": "78eb6c05a426e7c133b0d5464bab2cf7",
+    "semantic_hash": "78eb6c05a426e7c133b0d5464bab2cf7"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/routers/stations.py": {
+    "mtime": 1781189199.107591,
+    "ast_hash": "00ad37f1213c6676796ac0fdc63ddcb6",
+    "semantic_hash": "00ad37f1213c6676796ac0fdc63ddcb6"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/routers/summarize.py": {
+    "mtime": 1781041168.7592015,
+    "ast_hash": "789bf719e96ba75c9c1a3954e5a63e1e",
+    "semantic_hash": "789bf719e96ba75c9c1a3954e5a63e1e"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/services/ai_search.py": {
+    "mtime": 1781185498.7158942,
+    "ast_hash": "6a6cf07215d16014df34dbebdf1b11c7",
+    "semantic_hash": "6a6cf07215d16014df34dbebdf1b11c7"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/services/census_acs.py": {
+    "mtime": 1781149512.1776302,
+    "ast_hash": "e0155ea7fd34d95de3fb5f193b387930",
+    "semantic_hash": "e0155ea7fd34d95de3fb5f193b387930"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/services/economic_development.py": {
+    "mtime": 1781122776.6450288,
+    "ast_hash": "eb7fe9fbbf1f510012961e27e5d2647a",
+    "semantic_hash": "eb7fe9fbbf1f510012961e27e5d2647a"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/services/geography.py": {
+    "mtime": 1780950248.6015043,
+    "ast_hash": "b73e42e75f5d2c6cce39beb9ae152168",
+    "semantic_hash": "b73e42e75f5d2c6cce39beb9ae152168"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/services/geojson_converter.py": {
+    "mtime": 1781121716.6369262,
+    "ast_hash": "f6b74c829252aa81f1ffd5b4890da933",
+    "semantic_hash": "f6b74c829252aa81f1ffd5b4890da933"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/services/health_atlas.py": {
+    "mtime": 1781149882.820442,
+    "ast_hash": "d70cd128bc874cac0d3523c54fb095e0",
+    "semantic_hash": "d70cd128bc874cac0d3523c54fb095e0"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/services/library_events.py": {
+    "mtime": 1781189666.4843194,
+    "ast_hash": "7b82f5a92b9280d41bd215074644f0c2",
+    "semantic_hash": "7b82f5a92b9280d41bd215074644f0c2"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/services/provider_registry.py": {
+    "mtime": 1781039610.3271854,
+    "ast_hash": "4fda264624336ef60dfcb4e51ec62ec5",
+    "semantic_hash": "4fda264624336ef60dfcb4e51ec62ec5"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/services/proximity.py": {
+    "mtime": 1781185468.3469923,
+    "ast_hash": "bf29ab2e9744b7ac61bd9b8eeae7cd28",
+    "semantic_hash": "bf29ab2e9744b7ac61bd9b8eeae7cd28"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/services/query_translator.py": {
+    "mtime": 1780506852.2659123,
+    "ast_hash": "f5e8e38babe7279578270ad910cd3a50",
+    "semantic_hash": "f5e8e38babe7279578270ad910cd3a50"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/services/socrata.py": {
+    "mtime": 1780855158.5436325,
+    "ast_hash": "411f3723bba60da1485648941a75e3a6",
+    "semantic_hash": "411f3723bba60da1485648941a75e3a6"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/services/zone_resolver.py": {
+    "mtime": 1780855158.5437746,
+    "ast_hash": "19d67e43e2bc0a9b626f960b9b52a841",
+    "semantic_hash": "19d67e43e2bc0a9b626f960b9b52a841"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/index.html": {
+    "mtime": 1781189205.9675782,
+    "ast_hash": "e1d9e35d24a7a627ecfb63ba79bb8982",
+    "semantic_hash": "e1d9e35d24a7a627ecfb63ba79bb8982"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/resources/fonts/muli/SIL Open Font License.txt": {
+    "mtime": 1780501410.5301192,
+    "ast_hash": "75d307f6845f1fbfd614b73139eb2d88",
+    "semantic_hash": "75d307f6845f1fbfd614b73139eb2d88"
+  },
+  "/Users/tomschenkjr/git/opengrid/src/templates/qsearch-help.html": {
+    "mtime": 1780501410.5302358,
+    "ast_hash": "e33ef44bd6692b0871aa195f875e224a",
+    "semantic_hash": "e33ef44bd6692b0871aa195f875e224a"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/config/datasets.yaml": {
+    "mtime": 1781188640.2805839,
+    "ast_hash": "7c97c33d374d84dc63077a4ac0b4a712",
+    "semantic_hash": "7c97c33d374d84dc63077a4ac0b4a712"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/config/providers.yaml": {
+    "mtime": 1781039604.0469537,
+    "ast_hash": "7ee5501d75f991c5da70b5c1c7cbb58a",
+    "semantic_hash": "7ee5501d75f991c5da70b5c1c7cbb58a"
+  },
+  "/Users/tomschenkjr/git/opengrid/opengrid-service/requirements.txt": {
+    "mtime": 1780941785.480654,
+    "ast_hash": "2b767a31a8c6f2e16332cb33efb68b83",
+    "semantic_hash": "2b767a31a8c6f2e16332cb33efb68b83"
+  }
+}
