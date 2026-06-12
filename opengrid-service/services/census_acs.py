@@ -86,6 +86,7 @@ _WEIGHTED = {
 # Caches populated at startup.
 _profiles: dict[int, dict] = {}   # community area number → full profile dict
 _citywide: dict = {}              # citywide header metrics
+_citywide_sections: list = []     # citywide detailed sections
 _acs_year: int = 0
 
 
@@ -529,7 +530,7 @@ def _build_sections(sums: dict) -> list[dict]:
 # --------------------------------------------------------------------------- #
 async def initialize():
     """Fetch ACS tract data, aggregate to community areas, and cache (idempotent)."""
-    global _profiles, _citywide, _acs_year
+    global _profiles, _citywide, _citywide_sections, _acs_year
     key = os.getenv("CENSUS_API_KEY", "").strip()
     _acs_year = int(os.getenv("ACS_YEAR", "2023"))
 
@@ -569,6 +570,7 @@ async def initialize():
         city_sums = _new_sums()
         _accumulate(city_sums, place[0])
         _citywide = _header_metrics(city_sums)
+        _citywide_sections = _build_sections(city_sums)
 
     print(f"ACS {_acs_year}: cached {len(_profiles)} community-area profiles "
           f"({matched} tracts matched to crosswalk, {len(_VARS)} variables)")
@@ -665,6 +667,36 @@ def community_profile(number: int) -> dict:
                 sections.insert(insert_at, section)
     except Exception as e:
         print(f"Health Atlas profile additions unavailable for community area {number}: {e}")
+
+    return {**base, "available": True, "kpis": kpis, "comparison": comparison,
+            "sections": sections}
+
+
+def citywide_profile() -> dict:
+    """Return the shaped citywide profile payload (Chicago as a whole)."""
+    base = {"number": None, "name": "Chicago", "acs_year": _acs_year}
+
+    if not _citywide:
+        return {
+            **base,
+            "available": False,
+            "kpis": [],
+            "comparison": [],
+            "sections": [],
+            "message": "Census data unavailable — set CENSUS_API_KEY and restart the service",
+        }
+
+    kpis = [
+        {"id": fid, "label": label, "format": fmt,
+         "value": _citywide.get(fid), "citywide": _citywide.get(fid)}
+        for fid, label, fmt in _KPI_FIELDS
+    ]
+    comparison = [
+        {"id": fid, "label": label, "format": fmt,
+         "value": _citywide.get(fid), "citywide": _citywide.get(fid)}
+        for fid, label, fmt in _COMPARISON_FIELDS
+    ]
+    sections = copy.deepcopy(_citywide_sections)
 
     return {**base, "available": True, "kpis": kpis, "comparison": comparison,
             "sections": sections}

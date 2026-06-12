@@ -6,6 +6,7 @@
   - GET .../boundaries                → GeoJSON community-area outlines.
 """
 import json
+import re
 import traceback
 
 from fastapi import APIRouter, HTTPException
@@ -15,6 +16,10 @@ from services import census_acs, geography
 
 router = APIRouter()
 client = Anthropic()
+
+
+def _strip_headings(text: str) -> str:
+    return re.sub(r'^#+\s.*\n?', '', text, flags=re.MULTILINE).strip()
 
 
 def _round_value(value):
@@ -141,6 +146,42 @@ async def community_area_boundaries():
     return {"type": "FeatureCollection", "features": features}
 
 
+@router.get("/geography/community-areas/chicago/profile")
+async def chicago_profile():
+    """Headline ACS indicators for Chicago as a whole (citywide)."""
+    profile = census_acs.citywide_profile()
+    return profile
+
+
+@router.get("/geography/community-areas/chicago/profile/summary")
+async def chicago_profile_summary():
+    """AI-generated plain-language summary of Chicago citywide Community Trends."""
+    profile = census_acs.citywide_profile()
+    if not profile.get("available"):
+        return {"summary": profile.get("message") or "Citywide profile data is unavailable."}
+
+    facts = _profile_facts(profile)
+    prompt = f"""Write a plain-language Community Trends summary for Chicago as a whole city.
+
+Use only the facts in the JSON. Mention 3-5 notable patterns across the city. Keep it to 2 short paragraphs, no bullets, no markdown, no invented causes.
+
+Facts:
+{json.dumps(facts, separators=(",", ":"))}
+"""
+    try:
+        resp = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=260,
+            temperature=0.2,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        summary = _strip_headings(resp.content[0].text)
+        return {"summary": summary or _fallback_summary(profile)}
+    except Exception:
+        traceback.print_exc()
+        return {"summary": _fallback_summary(profile)}
+
+
 @router.get("/geography/community-areas/{number}/profile")
 async def community_area_profile(number: int):
     """Headline ACS indicators and citywide comparison for one community area."""
@@ -176,7 +217,7 @@ Facts:
             temperature=0.2,
             messages=[{"role": "user", "content": prompt}],
         )
-        summary = resp.content[0].text.strip()
+        summary = _strip_headings(resp.content[0].text)
         return {"summary": summary or _fallback_summary(profile)}
     except Exception:
         traceback.print_exc()

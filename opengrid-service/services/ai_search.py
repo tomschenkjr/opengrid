@@ -106,6 +106,43 @@ _PERSISTENT_SEARCH: list[dict] = [
         "aliases": ["bike racks", "bike rack", "bicycle racks", "bicycle rack"],
     },
     {
+        "id": "park-facilities",
+        "display": "Park Facilities",
+        "color": "#2f8f46",
+        "aliases": [
+            "park facilities", "park facility", "basketball courts", "basketball court",
+            "playgrounds", "playground", "tennis courts", "tennis court",
+            "baseball fields", "baseball field", "sports fields", "park amenities",
+        ],
+    },
+    {
+        "id": "park-buildings",
+        "display": "Park Buildings",
+        "color": "#64748b",
+        "aliases": [
+            "park buildings", "park building", "fieldhouses", "fieldhouse",
+            "concession stands", "concession stand", "harbor buildings",
+            "comfort stations", "comfort station",
+        ],
+    },
+    {
+        "id": "park-art",
+        "display": "Park District Art",
+        "color": "#9333ea",
+        "aliases": [
+            "park art", "park district art", "artworks", "artwork",
+            "statues", "statue", "murals", "mural", "monuments", "sculptures",
+        ],
+    },
+    {
+        "id": "parks",
+        "display": "Parks",
+        "color": "transparent",
+        "fill": True,
+        "opacity": 0,
+        "aliases": ["parks", "park", "chicago parks", "park district parks"],
+    },
+    {
         "id": "bus-stops",
         "display": "CTA Bus Stops",
         "color": "#1e88e5",
@@ -179,11 +216,21 @@ def _persistent_spec_for_query(query: str) -> dict | None:
 def _bbox_filter(items: list[dict], bounds: dict | None) -> list[dict]:
     if not bounds:
         return items
-    return [
-        item for item in items
-        if bounds["minLat"] <= item["lat"] <= bounds["maxLat"]
-        and bounds["minLon"] <= item["lon"] <= bounds["maxLon"]
-    ]
+    filtered = []
+    for item in items:
+        bbox = item.get("bbox")
+        if bbox:
+            intersects = not (
+                bbox["maxLat"] < bounds["minLat"] or bbox["minLat"] > bounds["maxLat"] or
+                bbox["maxLon"] < bounds["minLon"] or bbox["minLon"] > bounds["maxLon"]
+            )
+            if intersects:
+                filtered.append(item)
+            continue
+        if (bounds["minLat"] <= item["lat"] <= bounds["maxLat"]
+                and bounds["minLon"] <= item["lon"] <= bounds["maxLon"]):
+            filtered.append(item)
+    return filtered
 
 
 def _near_filter(items: list[dict], current_location: dict | None, query: str) -> list[dict]:
@@ -237,13 +284,22 @@ def _persistent_feature(item: dict, spec: dict) -> dict:
             ("observed", "Observed"),
             ("air_temp_f", "Air Temp F"),
             ("wind_avg_ms", "Wind Avg m/s"),
+            ("park_no", "Park No."),
+            ("park_class", "Class"),
+            ("acres", "Acres"),
+            ("ward", "Ward"),
+            ("zip", "ZIP"),
         ]:
             if key in item and item.get(key) not in (None, ""):
                 details.append({"label": label, "value": item.get(key)})
+    geometry = item.get("geometry") or {
+        "type": "Point",
+        "coordinates": [float(item["lon"]), float(item["lat"])],
+    }
     return {
         "type": "Feature",
         "id": item.get("id") or item.get("school_id") or item.get("stop_id") or item.get("station_id") or name,
-        "geometry": {"type": "Point", "coordinates": [float(item["lon"]), float(item["lat"])]},
+        "geometry": geometry,
         "properties": {
             "name": name,
             "type": item.get("kind_label") or spec["display"],
@@ -266,7 +322,8 @@ def _persistent_fc(items: list[dict], spec: dict) -> dict:
                         "icon": "default",
                         "color": spec["color"],
                         "fillColor": spec["color"],
-                        "opacity": 85,
+                        "fill": spec.get("fill", False),
+                        "opacity": spec.get("opacity", 85),
                         "size": 6,
                     }
                 },
@@ -287,8 +344,13 @@ async def _persistent_items(spec: dict, bounds: dict | None) -> list[dict]:
     sid = spec["id"]
     if sid == "schools":
         items = await station_data._fetch_schools()
-    elif sid in {"libraries", "police-stations", "fire-stations", "speed-cameras", "bike-racks"}:
+    elif sid in {
+        "libraries", "police-stations", "fire-stations", "speed-cameras",
+        "bike-racks", "park-facilities", "park-buildings", "park-art",
+    }:
         items = await station_data._fetch_facilities(sid)
+    elif sid == "parks":
+        items = await station_data._fetch_parks()
     elif sid == "bus-stops":
         items = await station_data._fetch_bus_stops()
     elif sid == "cta-stations":
@@ -775,7 +837,7 @@ def _build_reference_layer(locs: list[dict], reference: str) -> dict:
                 "displayName": f"{label} (search anchor)",
                 "options": {
                     "rendition": {
-                        "icon": "default",
+                        "icon": "fa-location-dot",
                         "color": "#006600",
                         "fillColor": "#66AA66",
                         "opacity": 70,
@@ -1429,6 +1491,7 @@ async def _process_single_result(result: dict, bounds: dict | None, current_loca
     )
     rows = _normalize_rows_for_dataset(rows, ds)
 
+    _proximity_ref_locs: list[dict] = []
     proximity_meta = None
     if is_spatial and prox and rows:
         print(f"[smart_search] proximity reference={prox['reference']!r} distance={prox.get('distance_meters')}m")
@@ -1441,6 +1504,7 @@ async def _process_single_result(result: dict, bounds: dict | None, current_loca
             ref_locs = await proximity.fetch_reference_locations(prox["reference"], bounds=bounds)
         print(f"[smart_search] ref_locs count={len(ref_locs)}")
         if ref_locs:
+            _proximity_ref_locs = ref_locs
             distance_m = float(prox.get("distance_meters", 400))
             rows = proximity.filter_by_proximity(
                 rows,
@@ -1477,9 +1541,23 @@ async def _process_single_result(result: dict, bounds: dict | None, current_loca
         if boundary:
             geojson["meta"]["geography_boundary"] = boundary
 
-    # Resolved filter state so the frontend filter chiclets can pre-populate.
-    # Pass the NL data predicate (not geo/bbox clauses) so a choropleth can match.
-    geojson["meta"]["filters"] = _build_filters_meta(ds, geo, "all", result.get("soql_where"))
+    # Build the soql_where for the results pane (meta.filters.soql_where).
+    # Must include any spatial constraint so search_records returns results
+    # bounded to the same area as the map layer.
+    if _using_circle:
+        # soql_where already has within_circle from the current-location path above
+        _filters_soql = soql_where or None
+    elif len(_proximity_ref_locs) == 1 and is_spatial:
+        # Single-point address/place reference: inject within_circle so the results
+        # pane query is also bounded (multi-point dataset references are left unbounded)
+        _r = float(prox.get("distance_meters", 400))
+        _loc = _proximity_ref_locs[0]
+        _circle = f"within_circle(location, {_loc['lat']}, {_loc['lon']}, {_r})"
+        _base = result.get("soql_where") or ""
+        _filters_soql = f"({_base}) AND {_circle}" if _base else _circle
+    else:
+        _filters_soql = result.get("soql_where") or None
+    geojson["meta"]["filters"] = _build_filters_meta(ds, geo, "all", _filters_soql)
 
     return geojson
 

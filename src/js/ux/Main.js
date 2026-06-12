@@ -97,6 +97,11 @@ ogrid.Main = ogrid.Class.extend({
             me._showAppPage('announce');
         });
 
+        crossroads.addRoute(new RegExp('^\/?announcements\/([^\/]+)\/?$'), function(eventId) {
+            console.log('Route matched announcement event page');
+            me._showAppPage('announce', { eventId: decodeURIComponent(eventId) });
+        });
+
         crossroads.addRoute(new RegExp('^\/?query\?(.+)\/?$'), function(query) {
             console.log('Route matched query resource');
             me._showAppPage('search');
@@ -159,6 +164,9 @@ ogrid.Main = ogrid.Class.extend({
         var route = routes[section] || routes.search;
         if (section === 'trends' && options && options.communityArea) {
             route += '/' + encodeURIComponent(options.communityArea);
+        }
+        if (section === 'announce' && options && options.eventId) {
+            route += '/' + encodeURIComponent(options.eventId);
         }
         return route;
     },

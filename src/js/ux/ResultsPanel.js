@@ -123,7 +123,7 @@ ogrid.ResultsPanel = ogrid.Class.extend({
     _showPanel: function() {
         $('#ogrid-results-panel').removeClass('hide').removeClass('station-mode');
         $('#ogrid-container')
-            .removeClass('viewing-section viewing-community-trends')
+            .removeClass('viewing-section viewing-community-trends viewing-announcements')
             .removeClass('results-collapsed');
         $('#ogrid-section-placeholder').addClass('hide');
         $('#ogrid-sidebar .ogrid-nav-item').removeClass('active').filter('[data-section="search"]').addClass('active');
@@ -341,7 +341,7 @@ ogrid.ResultsPanel = ogrid.Class.extend({
         this._mode = 'features';
         $('#ogrid-container')
             .removeClass('results-collapsed')
-            .removeClass('viewing-section viewing-community-trends');
+            .removeClass('viewing-section viewing-community-trends viewing-announcements');
         $('#ogrid-results-panel').removeClass('hide').addClass('station-mode');
         $('#ogrid-sidebar .ogrid-nav-item').removeClass('active').filter('[data-section="search"]').addClass('active');
         $('#ogrid-summarize-wrapper').addClass('hide').removeClass('expanded');
@@ -356,7 +356,7 @@ ogrid.ResultsPanel = ogrid.Class.extend({
         if (msg.resultSetId == null || msg.featureId == null) return;
         $('#ogrid-container')
             .removeClass('results-collapsed')
-            .removeClass('viewing-section viewing-community-trends');
+            .removeClass('viewing-section viewing-community-trends viewing-announcements');
         $('#ogrid-results-panel').removeClass('hide');
         var $cards = $('#ogrid-results-list .ogrid-result-card');
         var $match = $cards.filter(function() {

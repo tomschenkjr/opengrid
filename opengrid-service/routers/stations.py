@@ -6,6 +6,7 @@ import asyncio
 import csv
 import io
 import os
+import re
 import traceback
 import zipfile
 from datetime import datetime, timedelta, timezone
@@ -13,6 +14,8 @@ from zoneinfo import ZoneInfo
 
 import httpx
 from fastapi import APIRouter, HTTPException, Query
+
+from services import library_events
 
 _CHICAGO_TZ = ZoneInfo("America/Chicago")
 
@@ -25,10 +28,16 @@ _BEACH_WEATHER_OBS_URL = "https://data.cityofchicago.org/resource/k7hf-8y75.json
 _CTA_STOPS_URL       = "https://data.cityofchicago.org/resource/8pix-ypme.json"
 _CPS_SCHOOLS_URL     = "https://data.cityofchicago.org/resource/twrw-chuq.json"
 _LIBRARIES_URL       = "https://data.cityofchicago.org/resource/x8fc-8rcq.json"
+_LIBRARY_VISITORS_URL = "https://data.cityofchicago.org/resource/dx99-mui6.json"
+_LIBRARY_CIRCULATION_URL = "https://data.cityofchicago.org/resource/utjc-493b.json"
 _POLICE_STATIONS_URL = "https://data.cityofchicago.org/resource/z8bn-74gv.json"
 _FIRE_STATIONS_URL   = "https://data.cityofchicago.org/resource/28km-gtjn.json"
 _SPEED_CAMERAS_URL   = "https://data.cityofchicago.org/resource/4i42-qv3h.json"
 _BIKE_RACKS_URL      = "https://data.cityofchicago.org/resource/hgdw-64h3.json"
+_PARKS_URL           = "https://data.cityofchicago.org/resource/ejsh-fztr.json"
+_PARK_FACILITIES_URL = "https://data.cityofchicago.org/resource/eix4-gf83.json"
+_PARK_BUILDINGS_URL  = "https://data.cityofchicago.org/resource/vcti-mbcd.json"
+_PARK_ART_URL        = "https://data.cityofchicago.org/resource/pxyq-qhyd.json"
 _DIVVY_GBFS_URL      = "https://gbfs.divvybikes.com/gbfs/2.3/gbfs.json"
 _OPEN_AIR_URL        = "https://data.cityofchicago.org/resource/di9s-96ws.json"
 _CTA_GTFS_URL        = "https://www.transitchicago.com/downloads/sch_data/google_transit.zip"
@@ -45,6 +54,9 @@ _cta_stations_cache: dict = {"data": None, "expires": None}
 _bus_stops_cache: dict    = {"data": None, "expires": None}
 _schools_cache: dict      = {"data": None, "expires": None}
 _facilities_cache: dict   = {}
+_library_visitors_cache: dict = {"data": None, "expires": None}
+_library_circulation_cache: dict = {"data": None, "expires": None}
+_parks_cache: dict        = {"data": None, "expires": None}
 _divvy_feeds_cache: dict  = {"data": None, "expires": None}
 _divvy_station_info_cache: dict = {"data": None, "expires": None}
 _divvy_station_status_cache: dict = {"data": None, "expires": None}
@@ -68,6 +80,26 @@ _SCHOOL_FIELDS = [
     "chronic_truancy_pct", "freshmen_on_track_school_1", "graduation_4_year_school_1",
     "college_enrollment_school_1", "sat_grade_11_score_school",
     "school_latitude", "school_longitude", "location",
+]
+
+_PARK_FIELDS = [
+    "objectid_1", "park_no", "park", "location", "zip", "acres", "ward",
+    "park_class", "label", "the_geom",
+]
+
+_LIBRARY_MONTH_FIELDS = [
+    ("january", "Jan"),
+    ("february", "Feb"),
+    ("march", "Mar"),
+    ("april", "Apr"),
+    ("may", "May"),
+    ("june", "Jun"),
+    ("july", "Jul"),
+    ("august", "Aug"),
+    ("september", "Sep"),
+    ("october", "Oct"),
+    ("november", "Nov"),
+    ("december", "Dec"),
 ]
 
 _FACILITY_CONFIGS = {
@@ -109,6 +141,36 @@ _FACILITY_CONFIGS = {
         "label": "Bike Rack",
         "limit": 10000,
         "fields": ["latitude", "longitude", "location", "name", "quantity", "type"],
+    },
+    "park-facilities": {
+        "url": _PARK_FACILITIES_URL,
+        "label": "Park Facility",
+        "limit": 10000,
+        "fields": [
+            "objectid_1", "park", "park_no", "facility_n", "facility_t",
+            "x_coord", "y_coord", "gisobjid", "the_geom",
+        ],
+    },
+    "park-buildings": {
+        "url": _PARK_BUILDINGS_URL,
+        "label": "Park Building",
+        "limit": 5000,
+        "fields": [
+            "objectid_1", "park", "park_no", "bldg_id", "bldg_type",
+            "city_bldg_", "bldg_statu", "ward", "comm_area", "region",
+            "address", "bldg_name", "bldg_owner", "lessor", "lessee",
+            "stories", "x_coord", "y_coord", "year_built", "bldg_sq_fo",
+            "gisobjid", "the_geom",
+        ],
+    },
+    "park-art": {
+        "url": _PARK_ART_URL,
+        "label": "Park District Art",
+        "limit": 5000,
+        "fields": [
+            "objectid", "park", "park_no", "name", "artist", "owner",
+            "official_n", "x_coord", "y_coord", "gisobjid", "the_geom",
+        ],
     },
 }
 
@@ -302,6 +364,41 @@ async def beach_dna():
         except (TypeError, ValueError):
             continue
     return list(latest.values())
+
+
+@router.get("/stations/beach-dna/history")
+async def beach_dna_history(beach: str = Query(..., description="Beach name")):
+    """
+    DNA test readings for a single beach over the past 7 days, sorted oldest-first.
+    Source: data.cityofchicago.org dataset hmqm-anjq.
+    """
+    since = (datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%S")
+    escaped = beach.replace("'", "''")
+    params = {
+        "$select": "dna_reading_mean,dna_sample_timestamp",
+        "$where": f"beach='{escaped}' AND dna_sample_timestamp >= '{since}'",
+        "$order": "dna_sample_timestamp ASC",
+        "$limit": 200,
+    }
+    try:
+        async with httpx.AsyncClient(headers=_socrata_headers(), timeout=15) as http:
+            r = await http.get(_BEACH_DNA_URL, params=params)
+            r.raise_for_status()
+            rows = r.json()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Beach DNA history unavailable: {e}")
+
+    results = []
+    for row in rows:
+        ts = row.get("dna_sample_timestamp")
+        val = row.get("dna_reading_mean")
+        if ts is None or val is None:
+            continue
+        try:
+            results.append({"timestamp": ts, "dna_reading_mean": float(val)})
+        except (TypeError, ValueError):
+            continue
+    return results
 
 
 @router.get("/stations/beach-weather")
@@ -702,6 +799,7 @@ def _row_lat_lon(row: dict) -> tuple[float | None, float | None]:
     lat = row.get("latitude")
     lon = row.get("longitude")
     loc = row.get("location")
+    geom = row.get("the_geom")
     if (lat is None or lon is None) and isinstance(loc, dict):
         lat = loc.get("latitude") or loc.get("lat")
         lon = loc.get("longitude") or loc.get("lon")
@@ -709,6 +807,14 @@ def _row_lat_lon(row: dict) -> tuple[float | None, float | None]:
         if (lat is None or lon is None) and isinstance(coords, list) and len(coords) >= 2:
             lon = coords[0]
             lat = coords[1]
+    if (lat is None or lon is None) and isinstance(geom, dict):
+        coords = geom.get("coordinates")
+        if geom.get("type") == "Point" and isinstance(coords, list) and len(coords) >= 2:
+            lon = coords[0]
+            lat = coords[1]
+    if lat is None or lon is None:
+        lat = row.get("y_coord")
+        lon = row.get("x_coord")
     try:
         return float(lat), float(lon)
     except (TypeError, ValueError):
@@ -731,6 +837,81 @@ def _facility_details(row: dict, pairs: list[tuple[str, str]]) -> list[dict]:
         if value:
             details.append({"label": label, "value": value})
     return details
+
+
+def _library_key(value: str | None) -> str:
+    if not value:
+        return ""
+    key = value.upper().replace("WASHTINGTON", "WASHINGTON")
+    key = re.sub(r"\b(CHICAGO PUBLIC|REGIONAL|BRANCH|LIBRARY|CENTER)\b", " ", key)
+    key = re.sub(r"[^A-Z0-9]+", " ", key)
+    key = re.sub(r"\bDALEY RICHARD J BRIDGEPORT\b", "DALEY RICHARD J", key)
+    key = re.sub(r"\bDALEY RICHARD M W HUMBOLDT\b", "DALEY RICHARD M", key)
+    return re.sub(r"\s+", " ", key).strip()
+
+
+def _number_value(value) -> int | float | None:
+    if value in (None, ""):
+        return None
+    try:
+        number = float(str(value).replace(",", ""))
+    except (TypeError, ValueError):
+        return None
+    if number.is_integer():
+        return int(number)
+    return number
+
+
+def _library_month_points(row: dict) -> list[dict]:
+    return [
+        {"label": label, "value": _number_value(row.get(field))}
+        for field, label in _LIBRARY_MONTH_FIELDS
+    ]
+
+
+async def _fetch_library_metric(url: str, cache: dict, metric_id: str, label: str) -> dict:
+    now = datetime.now(timezone.utc)
+    if cache["data"] and cache["expires"] and now < cache["expires"]:
+        return cache["data"]
+
+    fields = ["branch", *[field for field, _label in _LIBRARY_MONTH_FIELDS], "ytd"]
+    try:
+        async with httpx.AsyncClient(headers=_socrata_headers(), timeout=30) as http:
+            r = await http.get(url, params={
+                "$select": ",".join(fields),
+                "$limit": 200,
+            })
+            r.raise_for_status()
+            rows = r.json()
+    except Exception as e:
+        print(f"[libraries:{metric_id}] unavailable: {e}")
+        return cache.get("data") or {}
+
+    by_branch = {}
+    for row in rows:
+        key = _library_key(_facility_value(row, "branch"))
+        if not key:
+            continue
+        by_branch[key] = {
+            "id": metric_id,
+            "label": label,
+            "year": 2024,
+            "total": _number_value(row.get("ytd")),
+            "points": _library_month_points(row),
+        }
+
+    print(f"[libraries:{metric_id}] cached {len(by_branch)} branch metrics")
+    cache["data"] = by_branch
+    cache["expires"] = now + _CACHE_TTL
+    return by_branch
+
+
+async def _fetch_library_metrics() -> tuple[dict, dict]:
+    visitors, circulation = await asyncio.gather(
+        _fetch_library_metric(_LIBRARY_VISITORS_URL, _library_visitors_cache, "visitors", "Visitors"),
+        _fetch_library_metric(_LIBRARY_CIRCULATION_URL, _library_circulation_cache, "circulation", "Circulation"),
+    )
+    return visitors, circulation
 
 
 def _facility_from_row(kind: str, row: dict) -> dict | None:
@@ -852,6 +1033,83 @@ def _facility_from_row(kind: str, row: dict) -> dict | None:
             ]),
         }
 
+    if kind == "park-facilities":
+        facility_name = _facility_value(row, "facility_n") or "Park Facility"
+        facility_type = _facility_value(row, "facility_t")
+        park = _facility_value(row, "park")
+        subtitle = " · ".join(v for v in [park, facility_type] if v)
+        return {
+            "id": f"park-facility-{_facility_value(row, 'objectid_1') or _facility_value(row, 'gisobjid') or facility_name}",
+            "kind": kind,
+            "kind_label": "Park Facility",
+            "title": facility_name,
+            "subtitle": subtitle,
+            "pill": facility_type or "Facility",
+            "lat": lat,
+            "lon": lon,
+            "details": _facility_details(row, [
+                ("park", "Park"),
+                ("park_no", "Park No."),
+                ("facility_t", "Type"),
+                ("gisobjid", "GIS Object ID"),
+            ]),
+        }
+
+    if kind == "park-buildings":
+        bldg_name = _facility_value(row, "bldg_name")
+        bldg_type = _facility_value(row, "bldg_type")
+        title = bldg_name or bldg_type or "Park Building"
+        subtitle = " · ".join(v for v in [
+            _facility_value(row, "park"),
+            _facility_value(row, "address"),
+        ] if v)
+        return {
+            "id": f"park-building-{_facility_value(row, 'objectid_1') or _facility_value(row, 'bldg_id') or title}",
+            "kind": kind,
+            "kind_label": "Park Building",
+            "title": title,
+            "subtitle": subtitle,
+            "pill": bldg_type or "Building",
+            "lat": lat,
+            "lon": lon,
+            "details": _facility_details(row, [
+                ("park", "Park"),
+                ("park_no", "Park No."),
+                ("bldg_id", "Building ID"),
+                ("bldg_type", "Type"),
+                ("bldg_statu", "Status"),
+                ("address", "Address"),
+                ("ward", "Ward"),
+                ("comm_area", "Community Area"),
+                ("year_built", "Year Built"),
+                ("bldg_sq_fo", "Sq. Ft."),
+                ("bldg_owner", "Owner"),
+            ]),
+        }
+
+    if kind == "park-art":
+        name = _facility_value(row, "name") or _facility_value(row, "official_n") or "Park District Artwork"
+        park = _facility_value(row, "park")
+        artist = _facility_value(row, "artist")
+        return {
+            "id": f"park-art-{_facility_value(row, 'objectid') or _facility_value(row, 'gisobjid') or name}",
+            "kind": kind,
+            "kind_label": "Park District Art",
+            "title": name,
+            "subtitle": park or "",
+            "pill": "Artwork",
+            "lat": lat,
+            "lon": lon,
+            "details": _facility_details(row, [
+                ("park", "Park"),
+                ("park_no", "Park No."),
+                ("artist", "Artist"),
+                ("owner", "Owner"),
+                ("official_n", "Official Name"),
+                ("gisobjid", "GIS Object ID"),
+            ]),
+        }
+
     return None
 
 
@@ -877,10 +1135,31 @@ async def _fetch_facilities(kind: str) -> list[dict]:
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"{config['label']} data unavailable: {e}")
 
+    library_visitors = {}
+    library_circulation = {}
+    library_upcoming_events = {}
+    if kind == "libraries":
+        library_visitors, library_circulation = await _fetch_library_metrics()
+        try:
+            library_upcoming_events = await library_events.events_by_library(limit_per_library=8)
+        except Exception as e:
+            print(f"[libraries:events] unavailable: {e}")
+
     facilities = []
     for row in rows:
         item = _facility_from_row(kind, row)
         if item:
+            if kind == "libraries":
+                key = _library_key(_facility_value(row, "branch_"))
+                visitor_series = library_visitors.get(key)
+                circulation_series = library_circulation.get(key)
+                upcoming = library_upcoming_events.get(key)
+                if visitor_series:
+                    item["library_visitors_2024"] = visitor_series
+                if circulation_series:
+                    item["library_circulation_2024"] = circulation_series
+                if upcoming:
+                    item["library_events"] = upcoming
             facilities.append(item)
 
     print(f"[facilities:{kind}] cached {len(facilities)} records")
@@ -905,6 +1184,132 @@ async def facilities(
         f for f in all_facilities
         if minLat <= f["lat"] <= maxLat and minLon <= f["lon"] <= maxLon
     ]
+
+
+def _geom_points(value):
+    if isinstance(value, (int, float)):
+        return []
+    if (isinstance(value, list) and len(value) >= 2
+            and all(isinstance(v, (int, float)) for v in value[:2])):
+        return [(float(value[1]), float(value[0]))]
+    if isinstance(value, list):
+        points = []
+        for child in value:
+            points.extend(_geom_points(child))
+        return points
+    return []
+
+
+def _geom_bbox(geometry: dict | None) -> dict | None:
+    if not isinstance(geometry, dict):
+        return None
+    points = _geom_points(geometry.get("coordinates"))
+    if not points:
+        return None
+    lats = [p[0] for p in points]
+    lons = [p[1] for p in points]
+    return {
+        "minLat": min(lats), "maxLat": max(lats),
+        "minLon": min(lons), "maxLon": max(lons),
+    }
+
+
+def _bbox_intersects(a: dict | None, b: dict) -> bool:
+    if not a:
+        return False
+    return not (
+        a["maxLat"] < b["minLat"] or a["minLat"] > b["maxLat"] or
+        a["maxLon"] < b["minLon"] or a["minLon"] > b["maxLon"]
+    )
+
+
+def _bbox_center(bbox: dict) -> tuple[float, float]:
+    return (
+        (bbox["minLat"] + bbox["maxLat"]) / 2,
+        (bbox["minLon"] + bbox["maxLon"]) / 2,
+    )
+
+
+def _park_from_row(row: dict) -> dict | None:
+    geometry = row.get("the_geom")
+    bbox = _geom_bbox(geometry)
+    if not bbox:
+        return None
+    lat, lon = _bbox_center(bbox)
+    details = []
+    for field, label in [
+        ("location", "Location"),
+        ("park_no", "Park No."),
+        ("park_class", "Class"),
+        ("acres", "Acres"),
+        ("ward", "Ward"),
+        ("zip", "ZIP"),
+    ]:
+        value = row.get(field)
+        if value not in (None, ""):
+            details.append({"label": label, "value": value})
+    park_name = row.get("park") or row.get("label") or "Chicago Park"
+    return {
+        "id": f"park-{row.get('objectid_1') or row.get('park_no') or park_name}",
+        "kind": "parks",
+        "kind_label": "Park",
+        "title": park_name,
+        "subtitle": row.get("location") or "",
+        "pill": row.get("park_class") or "Park",
+        "park_no": row.get("park_no"),
+        "park": park_name,
+        "location": row.get("location"),
+        "zip": row.get("zip"),
+        "acres": row.get("acres"),
+        "ward": row.get("ward"),
+        "park_class": row.get("park_class"),
+        "lat": lat,
+        "lon": lon,
+        "bbox": bbox,
+        "geometry": geometry,
+        "details": details,
+    }
+
+
+async def _fetch_parks() -> list[dict]:
+    """Chicago Park District park boundary polygons. Cached 24h."""
+    now = datetime.now(timezone.utc)
+    if _parks_cache["data"] and _parks_cache["expires"] and now < _parks_cache["expires"]:
+        return _parks_cache["data"]
+
+    params = {
+        "$select": ",".join(_PARK_FIELDS),
+        "$limit": 2000,
+    }
+    try:
+        async with httpx.AsyncClient(headers=_socrata_headers(), timeout=45) as http:
+            r = await http.get(_PARKS_URL, params=params)
+            r.raise_for_status()
+            rows = r.json()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Park boundary data unavailable: {e}")
+
+    parks = []
+    for row in rows:
+        park = _park_from_row(row)
+        if park:
+            parks.append(park)
+
+    print(f"[parks] cached {len(parks)} park boundaries")
+    _parks_cache["data"] = parks
+    _parks_cache["expires"] = now + _CACHE_TTL
+    return parks
+
+
+@router.get("/stations/parks")
+async def parks(
+    minLat: float = Query(...), minLon: float = Query(...),
+    maxLat: float = Query(...), maxLon: float = Query(...),
+):
+    """Chicago Park District park boundary polygons intersecting a bounding box."""
+    bounds = {"minLat": minLat, "minLon": minLon, "maxLat": maxLat, "maxLon": maxLon}
+    all_parks = await _fetch_parks()
+    return [p for p in all_parks if _bbox_intersects(p.get("bbox"), bounds)]
 
 
 async def _fetch_bus_stops() -> list[dict]:

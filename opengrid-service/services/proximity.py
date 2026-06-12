@@ -95,6 +95,41 @@ _FACILITY_ALIASES: dict[str, str] = {
     "bike rack": "bike-racks",
     "bicycle racks": "bike-racks",
     "bicycle rack": "bike-racks",
+    "park facilities": "park-facilities",
+    "park facility": "park-facilities",
+    "basketball courts": "park-facilities",
+    "basketball court": "park-facilities",
+    "playgrounds": "park-facilities",
+    "playground": "park-facilities",
+    "tennis courts": "park-facilities",
+    "tennis court": "park-facilities",
+    "baseball fields": "park-facilities",
+    "baseball field": "park-facilities",
+    "sports fields": "park-facilities",
+    "park amenities": "park-facilities",
+    "park buildings": "park-buildings",
+    "park building": "park-buildings",
+    "fieldhouses": "park-buildings",
+    "fieldhouse": "park-buildings",
+    "concession stands": "park-buildings",
+    "concession stand": "park-buildings",
+    "harbor buildings": "park-buildings",
+    "comfort stations": "park-buildings",
+    "comfort station": "park-buildings",
+    "park art": "park-art",
+    "park district art": "park-art",
+    "artworks": "park-art",
+    "artwork": "park-art",
+    "statues": "park-art",
+    "statue": "park-art",
+    "murals": "park-art",
+    "mural": "park-art",
+    "monuments": "park-art",
+    "sculptures": "park-art",
+}
+
+_PARK_ALIASES: set[str] = {
+    "parks", "park", "chicago parks", "park district parks",
 }
 
 _DIVVY_ALIASES: set[str] = {
@@ -107,6 +142,7 @@ _OPEN_AIR_ALIASES: set[str] = {
 
 PERSISTENT_PROXIMITY.update(_METRA_ALIASES)
 PERSISTENT_PROXIMITY.update(_FACILITY_ALIASES.keys())
+PERSISTENT_PROXIMITY.update(_PARK_ALIASES)
 PERSISTENT_PROXIMITY.update(_DIVVY_ALIASES)
 PERSISTENT_PROXIMITY.update(_OPEN_AIR_ALIASES)
 
@@ -216,6 +252,17 @@ async def _fetch_facility_locations(kind: str) -> list[dict]:
     rows = await station_data._fetch_facilities(kind)
     return [
         {"lat": row["lat"], "lon": row["lon"], "name": row.get("title") or row.get("name")}
+        for row in rows
+        if row.get("lat") and row.get("lon")
+    ]
+
+
+async def _fetch_park_locations() -> list[dict]:
+    from routers import stations as station_data
+
+    rows = await station_data._fetch_parks()
+    return [
+        {"lat": row["lat"], "lon": row["lon"], "name": row.get("title") or row.get("park")}
         for row in rows
         if row.get("lat") and row.get("lon")
     ]
@@ -420,6 +467,8 @@ async def fetch_reference_locations(reference: str, bounds: dict | None = None) 
                 return await _fetch_metra_station_locations()
             if key in _FACILITY_ALIASES:
                 return await _fetch_facility_locations(_FACILITY_ALIASES[key])
+            if key in _PARK_ALIASES:
+                return await _fetch_park_locations()
             if key in _DIVVY_ALIASES:
                 return await _fetch_divvy_station_locations()
             if key in _OPEN_AIR_ALIASES:

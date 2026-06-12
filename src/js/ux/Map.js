@@ -486,7 +486,19 @@ ogrid.Map = ogrid.Class.extend({
                             me._markers[rsId] = {};
 
                         //use meta view info to format display
-                        if (data.meta.view.options.rendition.icon==='marker') {
+                        var _rendIcon = data.meta.view.options.rendition.icon;
+                        if (_rendIcon && _rendIcon.indexOf('fa-') === 0) {
+                            var _faColor = data.meta.view.options.rendition.color || '#333';
+                            var _faIcon = L.divIcon({
+                                html: '<i class="fa-solid ' + _rendIcon + '" style="color:' + _faColor + ';font-size:20px;line-height:1"></i>',
+                                iconSize: [20, 20],
+                                iconAnchor: [10, 20],
+                                className: 'ogrid-fa-icon'
+                            });
+                            var m = new L.marker(latlng, { icon: _faIcon });
+                            me._markers[rsId][ogrid.oid(feature)] = m;
+                            return m;
+                        } else if (_rendIcon === 'marker') {
                             //default marker
                             var m = new L.marker(latlng);
                             me._markers[rsId][ogrid.oid(feature)] = m;

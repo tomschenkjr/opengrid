@@ -54,7 +54,9 @@ ogrid.CommunityProfile = ogrid.Class.extend({
             '</div>'
         );
         $('#ocp-area-select').on('change', function() {
-            var num = parseInt($(this).val(), 10);
+            var val = $(this).val();
+            if (val === 'chicago') { me.load('chicago'); return; }
+            var num = parseInt(val, 10);
             if (num) { me.load(num); }
         });
         this._built = true;
@@ -71,6 +73,7 @@ ogrid.CommunityProfile = ogrid.Class.extend({
             success: function(areas) {
                 var $sel = $('#ocp-area-select');
                 $sel.empty().append('<option value="">— choose —</option>');
+                $sel.append('<option value="chicago">Chicago (Citywide)</option>');
                 (areas || []).forEach(function(a) {
                     $sel.append('<option value="' + a.number + '">' + a.name + '</option>');
                 });
@@ -87,24 +90,28 @@ ogrid.CommunityProfile = ogrid.Class.extend({
     show: function() {
         this._build();
         this._container.removeClass('hide');
+        if (!this._current) { this.load('chicago'); }
     },
 
     hide: function() {
         this._container.addClass('hide');
     },
 
-    // Load and render the profile for a community area number.
+    // Load and render the profile for a community area number, or 'chicago' for citywide.
     load: function(number) {
         var me = this;
         this._build();
         this._current = number;
         this._destroyCharts();
         this._destroyMiniMap();
-        if (this._areasLoaded) { $('#ocp-area-select').val(String(number)); }
+        if (this._areasLoaded) {
+            $('#ocp-area-select').val(number === 'chicago' ? 'chicago' : String(number));
+        }
         $('#ocp-body').html('<div class="ocp-loading"><i class="fa fa-spinner fa-spin"></i> Loading…</div>');
 
+        var seg = (number === 'chicago') ? 'chicago' : number;
         $.ajax({
-            url: this._endpoint() + '/geography/community-areas/' + number + '/profile',
+            url: this._endpoint() + '/geography/community-areas/' + seg + '/profile',
             type: 'GET',
             headers: this._authHeaders(),
             success: function(data) { me._render(data); },
@@ -124,11 +131,13 @@ ogrid.CommunityProfile = ogrid.Class.extend({
             return;
         }
 
+        var meta = (data.number != null)
+            ? 'Community Area ' + data.number + ' · ACS ' + data.acs_year + ' (5-yr)'
+            : 'ACS ' + data.acs_year + ' (5-yr)';
         var html =
             '<div class="ocp-area-head">' +
               '<div class="ocp-area-name">' + data.name + '</div>' +
-              '<div class="ocp-area-meta">Community Area ' + data.number +
-                ' · ACS ' + data.acs_year + ' (5-yr)</div>' +
+              '<div class="ocp-area-meta">' + meta + '</div>' +
             '</div>' +
             this._renderOverview(data) +
             this._renderKpis(data.kpis) +
@@ -136,11 +145,17 @@ ogrid.CommunityProfile = ogrid.Class.extend({
 
         $('#ocp-body').html(html);
         this._instantiateCharts();
-        this._renderBoundaryMap(data.boundary);
+        if (data.number != null) { this._renderBoundaryMap(data.boundary); }
         this._loadSummary(data.number);
     },
 
     _renderOverview: function(data) {
+        var boundaryCard = (data.number != null)
+            ? '<div class="ocp-boundary-card">' +
+                '<div id="ocp-boundary-map" class="ocp-boundary-map"></div>' +
+                '<div class="ocp-boundary-label">Community Area ' + this._esc(data.number) + '</div>' +
+              '</div>'
+            : '';
         return '<div class="ocp-overview-row">' +
                  '<div class="ocp-summary-card">' +
                    '<div class="ocp-summary-title">About ' + this._esc(data.name) + '</div>' +
@@ -149,18 +164,16 @@ ogrid.CommunityProfile = ogrid.Class.extend({
                      '<i class="fa fa-spinner fa-spin"></i> Reading the profile…' +
                    '</div>' +
                  '</div>' +
-                 '<div class="ocp-boundary-card">' +
-                   '<div id="ocp-boundary-map" class="ocp-boundary-map"></div>' +
-                   '<div class="ocp-boundary-label">Community Area ' + this._esc(data.number) + '</div>' +
-                 '</div>' +
+                 boundaryCard +
                '</div>';
     },
 
     _loadSummary: function(number) {
         var me = this;
         var seq = ++this._summarySeq;
+        var seg = (number == null) ? 'chicago' : number;
         $.ajax({
-            url: this._endpoint() + '/geography/community-areas/' + number + '/profile/summary',
+            url: this._endpoint() + '/geography/community-areas/' + seg + '/profile/summary',
             type: 'GET',
             headers: this._authHeaders(),
             timeout: 45000,

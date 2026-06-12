@@ -11,10 +11,10 @@
 
     var _SCHOOL_ICON = L.divIcon({
         className: 'ogrid-school-marker',
-        html: '<div class="ogrid-school-icon-wrap"><i class="fa fa-book"></i></div>',
-        iconSize: [18, 18],
-        iconAnchor: [9, 9],
-        popupAnchor: [0, -11]
+        html: '<div class="ogrid-school-icon-wrap"><i class="fa fa-school"></i></div>',
+        iconSize: [22, 22],
+        iconAnchor: [11, 11],
+        popupAnchor: [0, -13]
     });
 
     function _esc(v) {
@@ -135,11 +135,11 @@
         s.id = 'ogrid-school-layer-style';
         s.textContent =
             '.ogrid-school-marker{background:transparent;border:none;}' +
-            '.ogrid-school-icon-wrap{width:18px;height:18px;background:' + SCHOOL_GREEN + ';' +
+            '.ogrid-school-icon-wrap{width:22px;height:22px;background:' + SCHOOL_GREEN + ';' +
             'border:2px solid #ecf0f1;border-radius:50%;display:flex;' +
             'align-items:center;justify-content:center;cursor:pointer;' +
             'box-shadow:0 1px 3px rgba(0,0,0,0.4);}' +
-            '.ogrid-school-icon-wrap .fa{color:#ecf0f1;font-size:8px;line-height:1;}' +
+            '.ogrid-school-icon-wrap .fa{color:#ecf0f1;font-size:11px;line-height:1;}' +
             '.ogrid-result-card.ogrid-school-result-card{cursor:default;}' +
             '.ogrid-school-pill{color:' + SCHOOL_GREEN + ';border-color:' + SCHOOL_GREEN + ';white-space:normal;text-align:left;}';
         document.head.appendChild(s);

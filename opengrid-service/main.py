@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 load_dotenv()
 
-from routers import auth, datasets, queries, capabilities, search, summarize, stations, geography as geography_router, map as map_router, community_profile as community_profile_router
+from routers import auth, datasets, queries, capabilities, search, summarize, stations, events as events_router, geography as geography_router, map as map_router, community_profile as community_profile_router
 from services.ai_search import initialize as ai_initialize
 from services import geography, provider_registry, zone_resolver, census_acs
 
@@ -55,6 +55,7 @@ app.include_router(capabilities.router, prefix=PREFIX)
 app.include_router(search.router, prefix=PREFIX)
 app.include_router(summarize.router, prefix=PREFIX)
 app.include_router(stations.router, prefix=PREFIX)
+app.include_router(events_router.router, prefix=PREFIX)
 app.include_router(geography_router.router, prefix=PREFIX)
 app.include_router(community_profile_router.router, prefix=PREFIX)
 app.include_router(map_router.router, prefix=PREFIX)

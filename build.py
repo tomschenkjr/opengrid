@@ -21,7 +21,17 @@ CSS_THEME_OUT   = "dist/css/ogrid-theme-blue-3bdf96e829.css"
 CSS_LOGIN_OUT   = "dist/css/login-custom-40ebfc9dbf.css"
 
 # --- Fixed asset tags injected into dist/index.html --------------------------
-HEAD_CSS = '  <link rel="stylesheet" href="css/lib-3e73535c69.css">'
+# Font Awesome 6 is layered over the legacy FA 4.3.0 in lib css so newer glyphs
+# (fa-school, fa-truck-medical, fa-building-shield, ...) render. FA6 dropped bare
+# `.fa` as a solid alias, so the compat rule restores it for the app's existing
+# `fa fa-*` markup; v4-shims keeps renamed v4 names (fa-bar-chart, *-o) working.
+_FA6 = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css"
+HEAD_CSS = (
+    '  <link rel="stylesheet" href="css/lib-3e73535c69.css">\n'
+    f'  <link rel="stylesheet" href="{_FA6}/all.min.css">\n'
+    f'  <link rel="stylesheet" href="{_FA6}/v4-shims.min.css">\n'
+    '  <style>.fa{font-family:"Font Awesome 6 Free";font-weight:900}</style>'
+)
 HEAD_JS  = '  <script src="js/lib-bundle-0e6b948858.min.js"></script>'
 BODY_CSS = (
     '  <link rel="stylesheet" href="css/app-88e5754bef.css">\n'

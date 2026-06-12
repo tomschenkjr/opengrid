@@ -2,8 +2,7 @@
  * ogrid.Sidebar
  *
  * Icon-rail navigation: hamburger collapse + section switching.
- * Map and Community Trends are addressable app pages; the other sections
- * keep their placeholder content until they are built.
+ * Map, Community Trends, and Announcements & Events are addressable app pages.
  */
 ogrid.Sidebar = ogrid.Class.extend({
 
@@ -35,6 +34,7 @@ ogrid.Sidebar = ogrid.Class.extend({
         options = options || {};
         var $ph = $('#ogrid-section-placeholder');
         var $cp = $('#ogrid-community-profile');
+        var $ann = $('#ogrid-announcements-page');
 
         $('#ogrid-sidebar .ogrid-nav-item')
             .removeClass('active')
@@ -42,19 +42,23 @@ ogrid.Sidebar = ogrid.Class.extend({
             .addClass('active');
 
         if (section === 'search') {
-            $('#ogrid-container').removeClass('viewing-section viewing-community-trends');
+            $('#ogrid-container').removeClass('viewing-section viewing-community-trends viewing-announcements');
             $ph.addClass('hide');
             $cp.addClass('hide');
+            $ann.addClass('hide');
             ogrid.communityProfile().hide();
+            if (ogrid.announcementsPage) { ogrid.announcementsPage().hide(); }
             return;
         }
         $('#ogrid-container')
             .addClass('viewing-section')
-            .toggleClass('viewing-community-trends', section === 'trends');
+            .toggleClass('viewing-community-trends', section === 'trends')
+            .toggleClass('viewing-announcements', section === 'announce');
 
-        // Community Trends gets a real page; other sections keep the placeholder.
         if (section === 'trends') {
             $ph.addClass('hide');
+            $ann.addClass('hide');
+            if (ogrid.announcementsPage) { ogrid.announcementsPage().hide(); }
             ogrid.communityProfile().show();
             if (options.communityArea) {
                 ogrid.communityProfile().load(options.communityArea);
@@ -64,6 +68,13 @@ ogrid.Sidebar = ogrid.Class.extend({
 
         $cp.addClass('hide');
         ogrid.communityProfile().hide();
+        if (section === 'announce' && ogrid.announcementsPage) {
+            $ph.addClass('hide');
+            ogrid.announcementsPage().show(options);
+            return;
+        }
+        $ann.addClass('hide');
+        if (ogrid.announcementsPage) { ogrid.announcementsPage().hide(); }
         var cfg = this._sections[section] || { icon: 'fa-info-circle', title: section };
         $ph.html(
             '<div class="ph-icon"><i class="fa ' + cfg.icon + '"></i></div>' +

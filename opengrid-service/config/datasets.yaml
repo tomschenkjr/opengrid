@@ -593,6 +593,207 @@ datasets:
         list: true
         sortOrder: 14
 
+  - id: "transportation-permits"
+    displayName: "Transportation Department Permits"
+    showDatasetChiclet: false
+    socrata_domain: "data.cityofchicago.org"
+    socrata_dataset_id: "pubx-yq2d"
+    lat_field: "latitude"
+    lon_field: "longitude"
+    geographic_columns:
+      community_area: null
+      ward: "ward"
+      zip: null
+      police_district: null
+    proximity:
+      name_field: "applicationdescription"
+      limit: 2000
+      aliases:
+        - "transportation permits"
+        - "transportation department permits"
+        - "CDOT permits"
+        - "street permits"
+        - "right of way permits"
+        - "street closure permits"
+    quickSearch:
+      enable: true
+      triggerWord: "cdot"
+      triggerAlias: "tp"
+      defaultMax: 200
+      defaultSort: '{"applicationstartdate": -1}'
+    options:
+      rendition:
+        icon: "default"
+        color: "#0E7490"
+        fillColor: "#67E8F9"
+        opacity: 85
+        size: 6
+    columns:
+      - id: "applicationstartdate"
+        displayName: "Start Date"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 1
+        format: "MM/DD/YYYY"
+      - id: "applicationissueddate"
+        displayName: "Issued Date"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 2
+        format: "MM/DD/YYYY"
+      - id: "applicationenddate"
+        displayName: "End Date"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 3
+        format: "MM/DD/YYYY"
+      - id: "applicationnumber"
+        displayName: "Application Number"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 4
+        quickSearch: true
+      - id: "applicationdescription"
+        displayName: "Permit Type"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 5
+        quickSearch: true
+      - id: "worktypedescription"
+        displayName: "Work Type"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 6
+        quickSearch: true
+      - id: "applicationstatus"
+        displayName: "Application Status"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 7
+      - id: "currentmilestone"
+        displayName: "Current Milestone"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 8
+      - id: "applicationname"
+        displayName: "Application Name"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 9
+        quickSearch: true
+      - id: "streetnumberfrom"
+        displayName: "Street Number From"
+        dataType: "number"
+        popup: true
+        list: true
+        sortOrder: 10
+      - id: "streetnumberto"
+        displayName: "Street Number To"
+        dataType: "number"
+        popup: true
+        list: true
+        sortOrder: 11
+      - id: "direction"
+        displayName: "Direction"
+        dataType: "string"
+        popup: true
+        list: true
+        sortOrder: 12
+      - id: "streetname"
+        displayName: "Street Name"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 13
+        quickSearch: true
+      - id: "suffix"
+        displayName: "Street Suffix"
+        dataType: "string"
+        popup: true
+        list: true
+        sortOrder: 14
+      - id: "placement"
+        displayName: "Placement"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 15
+      - id: "streetclosure"
+        displayName: "Street Closure"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 16
+      - id: "detail"
+        displayName: "Detail"
+        dataType: "string"
+        popup: true
+        list: false
+        sortOrder: 17
+      - id: "comments"
+        displayName: "Comments"
+        dataType: "string"
+        popup: true
+        list: false
+        sortOrder: 18
+      - id: "totalfees"
+        displayName: "Total Fees"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 19
+      - id: "ward"
+        displayName: "Ward"
+        dataType: "number"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 20
+      - id: "lastinspectiondate"
+        displayName: "Last Inspection Date"
+        dataType: "date"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 21
+        format: "MM/DD/YYYY"
+      - id: "lastinsptypedescr"
+        displayName: "Last Inspection Type"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 22
+      - id: "lastinspectionresult"
+        displayName: "Last Inspection Result"
+        dataType: "string"
+        filter: true
+        popup: true
+        list: true
+        sortOrder: 23
+
   - id: "building-violations"
     displayName: "Building Violations"
     showDatasetChiclet: false
