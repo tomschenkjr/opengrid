@@ -41,6 +41,8 @@ ogrid.Sidebar = ogrid.Class.extend({
             .filter('[data-section="' + section + '"]')
             .addClass('active');
 
+        $('#ogrid-clear-data-btn').toggle(section === 'search');
+
         if (section === 'search') {
             $('#ogrid-container').removeClass('viewing-section viewing-community-trends viewing-announcements');
             $ph.addClass('hide');

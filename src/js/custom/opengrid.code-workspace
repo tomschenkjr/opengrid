@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "../../../../mcp-aws-infra"
+		},
+		{
+			"path": "../../../../opengrid-aws-deploy"
 		}
 	],
 	"settings": {}

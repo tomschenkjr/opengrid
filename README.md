@@ -1,12 +1,16 @@
 ![OpenGrid](img/branding/OpenGrid_Logo_Horizontal_3Color.png)
 
-OpenGrid is an open-source, interactive map platform for exploring Chicago open data. It supports natural language queries powered by AI, proximity-based spatial filtering, neighborhood boundary visualization, and plain-language summarization of results.
+OpenGrid is an open-source, interactive map platform for exploring Chicago open data. It supports natural language queries powered by AI, community area trend analysis, toggleable map layers, event listings from Chicago institutions, and plain-language summarization of results.
 
 This fork is self-hosted and pulls live data from the [Chicago Data Portal](https://data.cityofchicago.org) (Socrata) via a custom Python service layer.
 
 ## Features
 
 - **AI-powered natural language search** — Type queries like "crimes in Logan Square last month" or "rodent complaints near schools" and the app translates them into structured Socrata SoQL queries using Claude.
+- **Community Trends** — Select any of Chicago's 77 community areas from the sidebar or click a neighborhood label on the map to see Census ACS indicators (population, income, education, housing, commute) alongside citywide comparisons and interactive charts.
+- **Map layers** — Toggle overlays for CTA train stations (with real-time arrivals), CTA bus stops, Metra commuter rail, Chicago Public Library branches, CPS schools, parks, civic facilities, Divvy bike share stations, and Open Air quality sensors.
+- **Events and announcements** — Browse upcoming events from Chicago Public Library branches, Chicago Park District, Navy Pier, and professional sports home games (Cubs, Sox, Bulls, Bears, Blackhawks).
+- **Beach data** — View real-time beach weather station readings (water temperature, wave height, wind) and beach DNA / E. coli test results for Chicago lakefront beaches.
 - **Geolocation-aware proximity search** — Queries like "food inspections around me" or "crimes near me" request the browser's GPS and filter results within a configurable radius.
 - **Neighborhood boundary display** — Searching for a community area (e.g., "Logan Square") or a data query scoped to one draws the boundary outline on the map.
 - **Multi-dataset queries** — Ask for two datasets at once ("show me crimes and 311 requests in Pilsen") and both layers render together.
@@ -15,30 +19,42 @@ This fork is self-hosted and pulls live data from the [Chicago Data Portal](http
 
 ## Architecture
 
-```
-Browser  ──►  dist/          (static frontend, Leaflet + jQuery)
-                │
-                ▼
-         opengrid-service/   (Python / FastAPI)
-                │
-                ├──► Anthropic API  (Claude Haiku — query translation & summarization)
-                └──► Chicago Data Portal  (Socrata REST API)
+```mermaid
+graph TD
+    Browser["Browser (dist/ — static frontend)"]
+    Service["opengrid-service (Python / FastAPI)"]
+    Anthropic["Anthropic API (Claude — query translation, summarization, community profiles)"]
+    Socrata["Chicago Data Portal (Socrata REST API)"]
+    Census["U.S. Census Bureau API (ACS 5-year estimates)"]
+    CTA["CTA Train Tracker / Bus Tracker"]
+    NOAA["NOAA / GLERL (beach weather)"]
+    MCP["MCP Provider (optional — marine, weather)"]
+
+    Browser --> Service
+    Service --> Anthropic
+    Service --> Socrata
+    Service --> Census
+    Service --> CTA
+    Service --> NOAA
+    Service --> MCP
 ```
 
 The frontend is a static site served from `dist/`. The service layer (`opengrid-service/`) implements the OpenGrid REST API contract and is the only component that talks to external APIs.
 
-## System Requirements
+## System requirements
 
 ### Frontend
 - Any modern web server (nginx, Apache, Python `http.server`, etc.)
 - Node.js + npm (for rebuilding the JS/CSS bundles — optional if using pre-built `dist/`)
 
-### Service Layer
+### Service layer
 - Python 3.11+
 - An [Anthropic API key](https://console.anthropic.com/)
+- A [U.S. Census Bureau API key](https://api.census.gov/data/key_signup.html) (required for Community Trends)
 - Optional: a [Socrata App Token](https://dev.socrata.com/foundry/data.cityofchicago.org/) to avoid throttling
+- Optional: [CTA Train Tracker](https://www.transitchicago.com/developers/traintrackerapply/) and [Bus Tracker](https://www.transitchicago.com/developers/bustrackerapply/) keys for real-time transit data
 
-### Browser Support
+### Browser support
 Chrome, Firefox, Safari, Edge. Also tested on iOS Safari and Android Chrome.
 
 ## Installation
@@ -63,8 +79,10 @@ Create a `.env` file in `opengrid-service/`:
 
 ```env
 ANTHROPIC_API_KEY=sk-ant-...
-SOCRATA_APP_TOKEN=your_socrata_token   # optional but recommended
-CORS_ORIGINS=*                         # restrict in production
+CENSUS_API_KEY=your_census_key       # required for Community Trends
+SOCRATA_APP_TOKEN=your_socrata_token # optional but recommended
+JWT_SECRET=a_random_secret_string    # required for auth tokens
+CORS_ORIGINS=*                       # restrict in production
 PORT=8080
 ```
 
@@ -99,22 +117,22 @@ Open `http://localhost:8000` in your browser.
 
 > **Note:** The build pipeline uses Gulp 3, which is incompatible with Node.js v12+. If you need to rebuild after editing source files, use the `uglifyjs` and CSS concatenation approach described in the project wiki, or downgrade to Node.js v10.
 
-## Available Datasets
+## Available datasets
 
-| Dataset | Socrata ID | Description |
-|---|---|---|
-| Crimes | `ijzp-q8t2` | Chicago Police Department incident reports |
-| Food Inspections | `4ijn-s7e5` | CDPH restaurant and food establishment inspections |
-| Building Permits | `ydr8-5enu` | City-issued building permits |
-| 311 Service Requests | `v6vf-nfxy` | All 311 service requests (graffiti, potholes, rodents, etc.) |
+| Dataset             | Socrata ID   | Description                                                    |
+|---------------------|--------------|----------------------------------------------------------------|
+| Crimes              | `ijzp-q8t2`  | Chicago Police Department incident reports                     |
+| Food Inspections    | `4ijn-s7e5`  | CDPH restaurant and food establishment inspections             |
+| Building Permits    | `ydr8-5enu`  | City-issued building permits                                   |
+| 311 Service Requests| `v6vf-nfxy`  | All 311 service requests (graffiti, potholes, rodents, etc.)   |
 
 Proximity-only datasets (used as spatial anchors, not shown as primary layers):
 
-| Dataset | Socrata ID | Used for |
-|---|---|---|
-| CPS Schools | `kh4r-387c` | "near schools" queries |
+| Dataset     | Socrata ID   | Used for               |
+|-------------|--------------|------------------------|
+| CPS Schools | `kh4r-387c`  | "near schools" queries |
 
-## Natural Language Search Examples
+## Natural language search examples
 
 The search bar accepts plain English. Examples:
 
@@ -128,27 +146,70 @@ The search bar accepts plain English. Examples:
 
 After results appear, click **Summarize** for a one-sentence AI-generated overview.
 
-## Service Layer API
+## Service layer API
 
-The service implements the OpenGrid REST contract at `/opengrid-service/rest`. Key endpoints:
+All routes are prefixed with `/opengrid-service/rest`.
 
-| Method | Path | Description |
-|---|---|---|
-| `POST` | `/search/smart` | Natural language → GeoJSON results |
-| `POST` | `/search/summarize` | Generate plain-language summary of results |
-| `GET` | `/datasets` | List available datasets |
-| `GET` | `/capabilities` | Service capabilities |
+### Search and data
 
-## Environment Variables
+| Method | Path               | Description                                  |
+|--------|--------------------|----------------------------------------------|
+| `POST` | `/search/smart`    | Natural language → GeoJSON results           |
+| `POST` | `/search/summarize`| Generate plain-language summary of results   |
+| `GET`  | `/datasets`        | List available datasets                      |
+| `GET`  | `/capabilities`    | Service capabilities                         |
 
-| Variable | Required | Default | Description |
-|---|---|---|---|
-| `ANTHROPIC_API_KEY` | Yes | — | Anthropic API key for Claude |
-| `SOCRATA_APP_TOKEN` | No | — | Socrata app token (avoids throttling) |
-| `CORS_ORIGINS` | No | `*` | Comma-separated allowed origins |
-| `PORT` | No | `8080` | Port the service listens on |
+### Geography and community trends
 
-## Submit a Bug
+| Method | Path                                         | Description                                  |
+|--------|----------------------------------------------|----------------------------------------------|
+| `GET`  | `/geography/community-areas`                 | List all 77 community areas                  |
+| `GET`  | `/geography/community-areas/{n}/profile`     | ACS indicators + citywide comparison         |
+| `GET`  | `/geography/community-areas/{n}/profile/summary` | AI plain-language summary of profile     |
+| `GET`  | `/geography/community-areas/boundaries`      | GeoJSON community-area boundary outlines     |
+
+### Stations and live data
+
+| Method | Path                        | Description                                         |
+|--------|-----------------------------|-----------------------------------------------------|
+| `GET`  | `/stations/beach`           | Beach DNA / E. coli test results                    |
+| `GET`  | `/stations/beach-weather`   | Real-time beach weather station observations        |
+| `GET`  | `/stations/cta`             | CTA train stations (with real-time arrivals if key set) |
+| `GET`  | `/stations/bus`             | CTA bus stops                                       |
+| `GET`  | `/stations/metra`           | Metra commuter rail stations                        |
+| `GET`  | `/stations/schools`         | CPS school locations                                |
+| `GET`  | `/stations/libraries`       | Chicago Public Library branches                     |
+| `GET`  | `/stations/parks`           | Chicago Park District parks                         |
+| `GET`  | `/stations/civic`           | Civic facilities (police stations, fire stations)   |
+| `GET`  | `/stations/divvy`           | Divvy bike share station status (live GBFS)         |
+| `GET`  | `/stations/openair`         | Open Air quality sensor readings                    |
+
+### Events
+
+| Method | Path                    | Description                                          |
+|--------|-------------------------|------------------------------------------------------|
+| `GET`  | `/events/library`       | Upcoming Chicago Public Library events               |
+| `GET`  | `/events/sports`        | Chicago sports home games                            |
+| `GET`  | `/events/navypier`      | Navy Pier events                                     |
+| `GET`  | `/events/parkdistrict`  | Chicago Park District events                         |
+
+## Environment variables
+
+| Variable               | Required                  | Default | Description                                         |
+|------------------------|---------------------------|---------|-----------------------------------------------------|
+| `ANTHROPIC_API_KEY`    | Yes                       | —       | Anthropic API key for Claude                        |
+| `CENSUS_API_KEY`       | Yes (Community Trends)    | —       | U.S. Census Bureau API key for ACS data             |
+| `ACS_YEAR`             | No                        | `2023`  | ACS 5-year vintage to query                         |
+| `SOCRATA_APP_TOKEN`    | No                        | —       | Socrata app token (avoids throttling)               |
+| `SOCRATA_SECRET_TOKEN` | No                        | —       | Socrata secret token                                |
+| `JWT_SECRET`           | No                        | —       | Secret for signing auth tokens                      |
+| `CORS_ORIGINS`         | No                        | `*`     | Comma-separated allowed origins                     |
+| `PORT`                 | No                        | `8080`  | Port the service listens on                         |
+| `MCP_SERVER_URL`       | No                        | —       | SSE endpoint for optional MCP provider              |
+| `CTA_TRAIN_TRACKER_KEY`| No                        | —       | CTA Train Tracker API key (real-time arrivals)      |
+| `CTA_BUS_TRACKER_KEY`  | No                        | —       | CTA Bus Tracker API key (real-time predictions)     |
+
+## Submit a bug
 
 Use the [issue tracker](../../issues/) to report bugs. Please include:
 
