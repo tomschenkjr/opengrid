@@ -246,9 +246,9 @@ async def _fetch_gtfs_zip() -> bytes:
 
 def _socrata_headers() -> dict:
     headers = {"User-Agent": "opengrid-service/1.0"}
-    token = os.getenv("SOCRATA_APP_TOKEN", "").strip() or None
-    if token:
-        headers["X-App-Token"] = token
+    key_id = os.getenv("SOCRATA_APP_TOKEN", "").strip() or None
+    if key_id:
+        headers["X-App-Token"] = key_id
     return headers
 _CARDINAL = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
              "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]

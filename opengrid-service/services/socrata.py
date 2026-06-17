@@ -1,25 +1,19 @@
 """
 Socrata SoDA API client using sodapy.
 
-Credentials:
-  SOCRATA_APP_TOKEN   — App Token (identifies the application, raises rate limits)
-  SOCRATA_SECRET_TOKEN — Secret Token (used with App Token for Basic Auth)
-
-Both are optional. With neither, requests are throttled. With only the App Token,
-rate limits are raised. With both, requests use HTTP Basic Auth (App Token as
-username, Secret Token as password) — required for write access.
+Credentials (optional):
+  SOCRATA_APP_TOKEN  — Key ID from Socrata API Keys page; sent as X-App-Token header.
+                       Raises rate limits above the anonymous tier for public read-only data.
 """
 
 import os
 from sodapy import Socrata
 
-APP_TOKEN = os.getenv("SOCRATA_APP_TOKEN", "").strip() or None
+_KEY_ID = os.getenv("SOCRATA_APP_TOKEN", "").strip() or None
 
 
 def get_client(domain: str) -> Socrata:
-    # sodapy sends APP_TOKEN as X-App-Token header automatically.
-    # No Basic Auth needed for public read-only Socrata data.
-    return Socrata(domain, APP_TOKEN, timeout=60)
+    return Socrata(domain, _KEY_ID, timeout=60)
 
 
 def query_dataset(
